@@ -5,6 +5,10 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Бесполезна при ручном добавлении мутаторов. При сканировании текущего пути класса автоматические регистрирует
+ * текущий помеченный мутатор в сторе.
+ */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface MutatorDTO {

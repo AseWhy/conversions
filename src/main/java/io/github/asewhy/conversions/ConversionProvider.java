@@ -157,12 +157,31 @@ public class ConversionProvider {
 
             var foundAccess = found.canAccess(from);
             var boundAccess = bound.canAccess(instance);
+            var boundType = bound.getType();
 
             found.setAccessible(true);
             bound.setAccessible(true);
 
             try {
-                bound.set(instance, found.get(from));
+                var result = found.get(from);
+
+                if(result != null) {
+                    if(ConversionResponse.class.isAssignableFrom(boundType)) {
+                        result = createResponse(result);
+                    }
+
+                    if(result instanceof Collection<?> collection) {
+                        var tempArray = new ArrayList<>();
+
+                        for(var item: collection) {
+                            tempArray.add(createResponse(item));
+                        }
+
+                        result = tempArray;
+                    }
+                }
+
+                bound.set(instance, result);
             } catch (IllegalAccessException e) {
                 throw new RuntimeException(e);
             }

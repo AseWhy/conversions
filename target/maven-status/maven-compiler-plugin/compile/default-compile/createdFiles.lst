@@ -1,6 +1,7 @@
 io/github/asewhy/conversions/ConversionMutator.class
 io/github/asewhy/conversions/support/CallbackNameStrategy.class
 io/github/asewhy/conversions/MutatorObjectBuilder.class
+io/github/asewhy/conversions/support/annotations/ShiftController.class
 io/github/asewhy/conversions/support/annotations/ConvertMutator.class
 io/github/asewhy/conversions/support/annotations/EnableConversions.class
 io/github/asewhy/conversions/support/annotations/ConvertResponse.class
@@ -13,7 +14,6 @@ io/github/asewhy/conversions/support/ConversionSpringAutoconfigure.class
 io/github/asewhy/conversions/ConversionStore.class
 io/github/asewhy/conversions/support/CaseUtil.class
 io/github/asewhy/conversions/support/ClassMetadata.class
-io/github/asewhy/conversions/support/annotations/ConversionController.class
 io/github/asewhy/conversions/ConversionProvider.class
 io/github/asewhy/conversions/support/iConversionFactory.class
 io/github/asewhy/conversions/support/annotations/MutatorDTO.class

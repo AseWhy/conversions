@@ -4,11 +4,39 @@ import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
 class ConversionUtils {
+    /**
+     * Получить первый generic параметр у метода
+     *
+     * @param from класс из суперкласса которого нужно получить генерик
+     * @return генерик тип
+     */
+    public static Class<?> findXGeneric(Class<?> from) {
+        var superClass = from.getGenericSuperclass();
+
+        if(superClass instanceof ParameterizedType parameterizedClass) {
+            var fromGenerics = parameterizedClass.getActualTypeArguments();
+            var fromGeneric = (Class<?>) null;
+
+            if (fromGenerics.length > 0) {
+                var genericType = fromGenerics[0];
+
+                if (genericType instanceof Class<?> c) {
+                    fromGeneric = c;
+                }
+            }
+
+            return fromGeneric;
+        } else {
+            return null;
+        }
+    }
+
     /**
      * Безопасный доступ к полю
      *

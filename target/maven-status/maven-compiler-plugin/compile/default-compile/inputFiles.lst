@@ -5,7 +5,6 @@
 /home/astecom/git/dto-conversion/src/main/java/io/github/asewhy/conversions/ConversionProvider.java
 /home/astecom/git/dto-conversion/src/main/java/io/github/asewhy/conversions/MutatorArrayBuilder.java
 /home/astecom/git/dto-conversion/src/main/java/io/github/asewhy/conversions/ConversionUtils.java
-/home/astecom/git/dto-conversion/src/main/java/io/github/asewhy/conversions/support/annotations/ConversionController.java
 /home/astecom/git/dto-conversion/src/main/java/io/github/asewhy/conversions/ConversionStore.java
 /home/astecom/git/dto-conversion/src/main/java/io/github/asewhy/conversions/ResponseMessageHandler.java
 /home/astecom/git/dto-conversion/src/main/java/io/github/asewhy/conversions/support/CaseUtil.java
@@ -14,6 +13,7 @@
 /home/astecom/git/dto-conversion/src/main/java/io/github/asewhy/conversions/support/CallbackNameStrategy.java
 /home/astecom/git/dto-conversion/src/main/java/io/github/asewhy/conversions/support/ConversionSpringAutoconfigure.java
 /home/astecom/git/dto-conversion/src/main/java/io/github/asewhy/conversions/support/annotations/EnableConversions.java
+/home/astecom/git/dto-conversion/src/main/java/io/github/asewhy/conversions/support/annotations/ShiftController.java
 /home/astecom/git/dto-conversion/src/main/java/io/github/asewhy/conversions/support/annotations/MutatorDTO.java
 /home/astecom/git/dto-conversion/src/main/java/io/github/asewhy/conversions/support/iConversionFactory.java
 /home/astecom/git/dto-conversion/src/main/java/io/github/asewhy/conversions/support/iBuildable.java

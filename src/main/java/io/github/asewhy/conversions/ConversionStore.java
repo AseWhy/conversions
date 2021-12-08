@@ -53,16 +53,7 @@ public class ConversionStore {
         for(var current: scanner.findCandidateComponents(packageName)) {
             try {
                 var clazz = Class.forName(current.getBeanClassName());
-                var generics = ((ParameterizedType) clazz.getGenericSuperclass()).getActualTypeArguments();
-                var generic = (Class<?>) null;
-
-                if(generics.length > 0) {
-                    var genericType = generics[0];
-
-                    if(genericType instanceof Class<?> c) {
-                        generic = c;
-                    }
-                }
+                var generic = ConversionUtils.findXGeneric(clazz);
 
                 if(
                     generic != null && (

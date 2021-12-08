@@ -1,6 +1,6 @@
 package io.github.asewhy.conversions;
 
-import io.github.asewhy.conversions.support.annotations.ConversionController;
+import io.github.asewhy.conversions.support.annotations.ShiftController;
 import io.github.asewhy.conversions.support.annotations.ConvertResponse;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.converter.HttpMessageConverter;
@@ -33,7 +33,7 @@ public class ResponseMessageHandler extends RequestResponseBodyMethodProcessor {
         }
 
         if(!annotation) {
-            annotation = annotatedClass.getAnnotation(ConversionController.class) != null;
+            annotation = annotatedClass.getAnnotation(ShiftController.class) != null;
         }
 
         return annotation;
