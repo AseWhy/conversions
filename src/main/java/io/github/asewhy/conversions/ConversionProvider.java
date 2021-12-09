@@ -124,8 +124,18 @@ public class ConversionProvider {
 
         var fromClass = from.getClass();
 
+        if(fromClass.getSimpleName().equals("")) {
+            //
+            // Анонимные классы не имеют названия
+            //
+            fromClass = fromClass.getSuperclass();
+        }
+
         if(!store.isPresentResponse(fromClass)) {
-            throw new IllegalArgumentException("It's entity is not registered on current store.");
+            //
+            // Класс не найден в сторе для преобразования
+            //
+            throw new IllegalArgumentException("It's entity is not registered on current store. " + fromClass);
         }
 
         var instance = (T) null;
@@ -157,6 +167,7 @@ public class ConversionProvider {
 
             var foundAccess = found.canAccess(from);
             var boundAccess = bound.canAccess(instance);
+            var foundType = found.getType();
             var boundType = bound.getType();
 
             found.setAccessible(true);

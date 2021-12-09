@@ -8,7 +8,7 @@ import org.springframework.context.annotation.ClassPathScanningCandidateComponen
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.ParameterizedType;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -109,8 +109,12 @@ public class ConversionStore {
                 var boundType = bound.getType();
 
                 if(
-                    boundType == foundType || isConverterOwn(found, boundType) &&
-                    ConversionResponse.class.isAssignableFrom(foundType)
+                    boundType == foundType &&
+                    (
+                        !Collection.class.isAssignableFrom(foundType) || isConventionalCollection(found, bound)
+                    ) ||
+                    isConverterOwn(found, boundType) &&
+                    ConversionResponse.class.isAssignableFrom(boundType)
                 ) {
                     fieldsFound.put(found, bound);
                 }
@@ -146,8 +150,13 @@ public class ConversionStore {
                 var boundType = bound.getType();
 
                 if(
-                    boundType == foundType || isConverterOwn(found, boundType) &&
+                    boundType == foundType &&
+                    (
+                        !Collection.class.isAssignableFrom(foundType) || isConventionalCollection(found, bound)
+                    ) ||
+                    isConverterOwn(found, boundType) &&
                     ConversionMutator.class.isAssignableFrom(foundType)
+
                 ) {
                     fieldsFound.put(found, bound);
                 }
@@ -160,6 +169,23 @@ public class ConversionStore {
     }
 
     /**
+     * Сравнивает подтипы двух коллекций
+     *
+     * @param found найденное значение
+     * @param bound значение для преобразования
+     * @return true если коллекции можно конвертировать
+     */
+    protected boolean isConventionalCollection(Field found, Field bound) {
+        var requireBeConverter = ConversionUtils.findXGeneric(bound);
+
+        if(requireBeConverter == null) {
+            return false;
+        } else {
+            return ConversionUtils.findXGeneric(found) == ConversionUtils.findXGeneric(requireBeConverter);
+        }
+    }
+
+    /**
      * Вернет true если это поле конвертера, для поля целевого класса
      *
      * @param found поле с конвертером
@@ -167,21 +193,7 @@ public class ConversionStore {
      * @return true если истина
      */
     protected boolean isConverterOwn(Field found, Class<?> boundClazz) {
-        var genericsParams = found.getGenericType();
-
-        if(genericsParams instanceof ParameterizedType pt) {
-            var generics = pt.getActualTypeArguments();
-
-            if(generics.length > 0) {
-                var generic = generics[0];
-
-                if(generic instanceof Class<?> clazz) {
-                    return clazz == boundClazz;
-                }
-            }
-        }
-
-        return false;
+        return ConversionUtils.findXGeneric(boundClazz) == found.getType();
     }
 
     /**

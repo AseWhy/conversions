@@ -11,10 +11,34 @@ import java.util.Set;
 
 class ConversionUtils {
     /**
-     * Получить первый generic параметр у метода
+     * Получить первый generic параметр у поля
      *
-     * @param from класс из суперкласса которого нужно получить генерик
-     * @return генерик тип
+     * @param from поле, generic значение которого нужно получить
+     * @return generic тип или nell
+     */
+    public static Class<?> findXGeneric(Field from) {
+        var genericsParams = from.getGenericType();
+
+        if(genericsParams instanceof ParameterizedType pt) {
+            var generics = pt.getActualTypeArguments();
+
+            if(generics.length > 0) {
+                var generic = generics[0];
+
+                if(generic instanceof Class<?> clazz) {
+                    return clazz;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Получить первый generic параметр у класса
+     *
+     * @param from класс из супер класса, которого нужно получить generic
+     * @return generic тип или null
      */
     public static Class<?> findXGeneric(Class<?> from) {
         var superClass = from.getGenericSuperclass();
