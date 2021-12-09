@@ -1,15 +1,38 @@
 package io.github.asewhy.conversions;
 
+import io.github.asewhy.conversions.support.annotations.Identifier;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 class ConversionUtils {
+    /**
+     * Получает поле идентификатор в целевом классе.
+     *
+     * @param clazz класс для поиска идентификатора
+     * @return найденное поле-идентификатор
+     */
+    public static Field findTypeId(Class<?> clazz) {
+        var fields = scanFields(clazz);
+        var idField = (Field) null;
+
+        for(var field: fields) {
+            if(field.getName().equals("id")) {
+                idField = field;
+            }
+
+            if(field.getAnnotation(Identifier.class) != null) {
+                return field;
+            }
+        }
+
+        return idField;
+    }
+
     /**
      * Получить первый generic параметр у поля
      *
@@ -69,16 +92,20 @@ class ConversionUtils {
      * @return полученное значение
      * @throws IllegalAccessException если получить значение не удалось
      */
-    public static Object safeAccess(Field field, Object caller) throws IllegalAccessException {
-        var access = field.canAccess(caller);
+    public static Object safeAccess(Field field, Object caller) {
+        try {
+            var access = field.canAccess(caller);
 
-        field.setAccessible(true);
+            field.setAccessible(true);
 
-        var found = field.get(caller);
+            var found = field.get(caller);
 
-        field.setAccessible(access);
+            field.setAccessible(access);
 
-        return found;
+            return found;
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -109,6 +136,182 @@ class ConversionUtils {
         }
 
         return fields;
+    }
+
+    /**
+     * Сканирует методы класса, получая методы, из него и подклассов
+     *
+     * @param clazz целевой класс
+     * @param explode исключения в дереве
+     * @return методы класса и супер класса
+     */
+    public static List<Method> scanMethods(Class<?> clazz, @NotNull Set<Class<?>> explode) {
+        var fields = new ArrayList<Method>();
+
+        while(clazz != null) {
+            if(explode.contains(clazz)) {
+                break;
+            }
+
+            var interfaces = clazz.getInterfaces();
+
+            fields.addAll(List.of(clazz.getDeclaredMethods()));
+
+            for(var current: interfaces) {
+                fields.addAll(scanMethods(current, explode));
+            }
+
+            clazz = clazz.getSuperclass();
+        }
+
+        return fields;
+    }
+
+    /**
+     * Сканирует поля класса, получая поля, из него и подклассов
+     *
+     * @param clazz целевой класс
+     * @param explode исключения в дереве
+     * @return поля класса и супер класса
+     */
+    public static List<Field> scanFields(Class<?> clazz, @NotNull Set<Class<?>> explode) {
+        var fields = new ArrayList<Field>();
+
+        while(clazz != null) {
+            if(explode.contains(clazz)) {
+                break;
+            }
+
+            var interfaces = clazz.getInterfaces();
+
+            fields.addAll(List.of(clazz.getDeclaredFields()));
+
+            for(var current: interfaces) {
+                fields.addAll(scanFields(current, explode));
+            }
+
+            clazz = clazz.getSuperclass();
+        }
+
+        return fields;
+    }
+
+
+    /**
+     * Сканирует класс, получая от туда все методы и поля, из него и подклассов
+     *
+     * @param clazz целевой класс
+     * @param explode исключения в дереве
+     * @return поля и методы класса и супер класса
+     */
+    public static Map<String, AccessibleObject> scanToMap(Class<?> clazz, @NotNull Set<Class<?>> explode) {
+        var fields = new HashMap<String, AccessibleObject>();
+
+        while(clazz != null) {
+            if(explode.contains(clazz)) {
+                break;
+            }
+
+            var interfaces = clazz.getInterfaces();
+
+            for(var field: List.of(clazz.getDeclaredFields())) {
+                fields.put(field.getName(), field);
+            }
+
+            for(var method: List.of(clazz.getDeclaredMethods())) {
+                fields.put(method.getName(), method);
+            }
+
+            for(var current: interfaces) {
+                fields.putAll(scanToMap(current, explode));
+            }
+
+            clazz = clazz.getSuperclass();
+        }
+
+        return fields;
+    }
+
+    /**
+     * Сканирует методы класса, получая методы, из него и подклассов
+     *
+     * @param clazz целевой класс
+     * @param explode исключения в дереве
+     * @return методы класса и супер класса
+     */
+    public static Map<String, Method> scanMethodsToMap(Class<?> clazz, @NotNull Set<Class<?>> explode) {
+        var fields = new HashMap<String, Method>();
+
+        while(clazz != null) {
+            if(explode.contains(clazz)) {
+                break;
+            }
+
+            var interfaces = clazz.getInterfaces();
+
+            for(var method: List.of(clazz.getDeclaredMethods())) {
+                fields.put(method.getName(), method);
+            }
+
+            for(var current: interfaces) {
+                fields.putAll(scanMethodsToMap(current, explode));
+            }
+
+            clazz = clazz.getSuperclass();
+        }
+
+        return fields;
+    }
+
+    /**
+     * Сканирует поля класса, получая поля, из него и подклассов
+     *
+     * @param clazz целевой класс
+     * @param explode исключения в дереве
+     * @return поля класса и супер класса
+     */
+    public static Map<String, Field> scanFieldsToMap(Class<?> clazz, @NotNull Set<Class<?>> explode) {
+        var fields = new HashMap<String, Field>();
+
+        while(clazz != null) {
+            if(explode.contains(clazz)) {
+                break;
+            }
+
+            var interfaces = clazz.getInterfaces();
+
+            for(var field: List.of(clazz.getDeclaredFields())) {
+                fields.put(field.getName(), field);
+            }
+
+            for(var current: interfaces) {
+                fields.putAll(scanFieldsToMap(current, explode));
+            }
+
+            clazz = clazz.getSuperclass();
+        }
+
+        return fields;
+    }
+
+    public static Map<String, Method> scanMethodsToMap(Class<?> clazz) {
+        return scanMethodsToMap(clazz, Set.of());
+    }
+
+    public static Map<String, Field> scanFieldsToMap(Class<?> clazz) {
+        return scanFieldsToMap(clazz, Set.of());
+    }
+
+    public static Map<String, AccessibleObject> scanToMap(Class<?> clazz) {
+        return scanToMap(clazz, Set.of());
+    }
+
+    public static List<Method> scanMethods(Class<?> clazz) {
+        return scanMethods(clazz, Set.of());
+    }
+
+    public static List<Field> scanFields(Class<?> clazz) {
+        return scanFields(clazz, Set.of());
     }
 
     public static List<AccessibleObject> scan(Class<?> clazz) {

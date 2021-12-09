@@ -7,7 +7,6 @@ import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 import java.util.Objects;
 
@@ -29,7 +28,7 @@ public record MutatorArgumentResolver(
     ) throws Exception {
         var factory = provider.getFactory();
         var objectMapper = factory.getObjectMapper();
-        var httpServletRequest = nativeWebRequest.getNativeRequest(HttpServletRequest.class);
+        var httpServletRequest = nativeWebRequest.getNativeRequest(javax.servlet.http.HttpServletRequest.class);
 
         if (httpServletRequest != null) {
             var tree = objectMapper.readTree(httpServletRequest.getInputStream());

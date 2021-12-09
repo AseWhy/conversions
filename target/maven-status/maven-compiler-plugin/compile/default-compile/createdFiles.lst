@@ -14,6 +14,7 @@ io/github/asewhy/conversions/support/ConversionSpringAutoconfigure.class
 io/github/asewhy/conversions/ConversionStore.class
 io/github/asewhy/conversions/support/CaseUtil.class
 io/github/asewhy/conversions/support/ClassMetadata.class
+io/github/asewhy/conversions/support/annotations/Identifier.class
 io/github/asewhy/conversions/ConversionProvider.class
 io/github/asewhy/conversions/support/iConversionFactory.class
 io/github/asewhy/conversions/support/annotations/MutatorDTO.class

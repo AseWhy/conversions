@@ -49,40 +49,36 @@ public class ConversionProvider {
             if (mirror.containsKey(jsonName)) {
                 from.touchedFields.add(jsonName);
 
-                try {
-                    var mirrorValue = mirror.get(jsonName);
-                    var found = ConversionUtils.safeAccess(current, from);
+                var mirrorValue = mirror.get(jsonName);
+                var found = ConversionUtils.safeAccess(current, from);
 
-                    if (
-                        found instanceof ConversionMutator<?> foundMutator &&
-                        foundMutator.getClass() != clazz &&
-                        mirrorValue instanceof Map<?, ?> map
-                    ) {
-                        createMutator(foundMutator, (Map<String, Object>) map);
-                    }
+                if (
+                    found instanceof ConversionMutator<?> foundMutator &&
+                    foundMutator.getClass() != clazz &&
+                    mirrorValue instanceof Map<?, ?> map
+                ) {
+                    createMutator(foundMutator, (Map<String, Object>) map);
+                }
 
-                    if (found instanceof Collection<?> collection) {
-                        var foundIterator = collection.iterator();
+                if (found instanceof Collection<?> collection) {
+                    var foundIterator = collection.iterator();
 
-                        if (mirrorValue instanceof Collection<?> receivedCollection) {
-                            var mirrorIterator = receivedCollection.iterator();
+                    if (mirrorValue instanceof Collection<?> receivedCollection) {
+                        var mirrorIterator = receivedCollection.iterator();
 
-                            if (foundIterator.hasNext() && mirrorIterator.hasNext()) {
-                                var currentFound = foundIterator.next();
-                                var currentMirror = mirrorIterator.next();
+                        if (foundIterator.hasNext() && mirrorIterator.hasNext()) {
+                            var currentFound = foundIterator.next();
+                            var currentMirror = mirrorIterator.next();
 
-                                if (
-                                    currentFound instanceof ConversionMutator<?> foundMutator &&
-                                    foundMutator.getClass() != clazz &&
-                                    currentMirror instanceof Map<?, ?> map
-                                ) {
-                                    createMutator(foundMutator, (Map<String, Object>) map);
-                                }
+                            if (
+                                currentFound instanceof ConversionMutator<?> foundMutator &&
+                                foundMutator.getClass() != clazz &&
+                                currentMirror instanceof Map<?, ?> map
+                            ) {
+                                createMutator(foundMutator, (Map<String, Object>) map);
                             }
                         }
                     }
-                } catch (IllegalAccessException e) {
-                    throw new RuntimeException(e);
                 }
             }
         }

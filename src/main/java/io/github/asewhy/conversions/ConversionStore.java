@@ -11,7 +11,6 @@ import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 @Log4j2
 @SuppressWarnings("unused")
@@ -95,8 +94,8 @@ public class ConversionStore {
         var metadata = getBound(target);
         var fieldsFound = metadata.getIntersects();
         var fieldsTotal = metadata.getFound();
-        var foundFields = allFieldsIn(target);
-        var boundFields = allFieldsIn(response);
+        var foundFields = ConversionUtils.scanFieldsToMap(target);
+        var boundFields = ConversionUtils.scanFieldsToMap(response);
 
         metadata.setBoundClass(response);
 
@@ -136,8 +135,8 @@ public class ConversionStore {
         var metadata = getBound(mutator);
         var fieldsFound = metadata.getIntersects();
         var fieldsTotal = metadata.getFound();
-        var foundFields = allFieldsIn(mutator);
-        var boundFields = allFieldsIn(target);
+        var foundFields = ConversionUtils.scanFieldsToMap(mutator);
+        var boundFields = ConversionUtils.scanFieldsToMap(target);
 
         metadata.setBoundClass(target);
 
@@ -152,7 +151,7 @@ public class ConversionStore {
                 if(
                     boundType == foundType &&
                     (
-                        !Collection.class.isAssignableFrom(foundType) || isConventionalCollection(found, bound)
+                        !Collection.class.isAssignableFrom(foundType) || isConventionalCollection(bound, found)
                     ) ||
                     isConverterOwn(found, boundType) &&
                     ConversionMutator.class.isAssignableFrom(foundType)
@@ -171,17 +170,17 @@ public class ConversionStore {
     /**
      * Сравнивает подтипы двух коллекций
      *
-     * @param found найденное значение
-     * @param bound значение для преобразования
+     * @param compare найденное значение
+     * @param source значение для преобразования
      * @return true если коллекции можно конвертировать
      */
-    protected boolean isConventionalCollection(Field found, Field bound) {
-        var requireBeConverter = ConversionUtils.findXGeneric(bound);
+    protected boolean isConventionalCollection(Field compare, Field source) {
+        var requireBeConverter = ConversionUtils.findXGeneric(source);
 
         if(requireBeConverter == null) {
             return false;
         } else {
-            return ConversionUtils.findXGeneric(found) == ConversionUtils.findXGeneric(requireBeConverter);
+            return ConversionUtils.findXGeneric(compare) == ConversionUtils.findXGeneric(requireBeConverter);
         }
     }
 
@@ -218,22 +217,42 @@ public class ConversionStore {
         return result;
     }
 
-    /**
-     * Получить все карту типа <название, поле> для класса clazz
-     *
-     * @param clazz класс для сканирования полей
-     * @return найденная карта полей
-     */
-    protected static Map<String, Field> allFieldsIn(Class<?> clazz) {
-        var foundFields = new HashMap<String, Field>();
-        var objects = ConversionUtils.scan(clazz, Set.of(ConversionMutator.class));
+    @Override
+    public String toString() {
+        var builder = new StringBuilder();
 
-        for(var field: objects) {
-            if(field instanceof Field currentField) {
-                foundFields.put(currentField.getName(), currentField);
+        builder.append("mutators: ");
+
+        for(var mutator: mutatorsMap.entrySet()) {
+            var clazz = mutator.getKey();
+            var metadata = mutator.getValue();
+
+            builder.append("\n\t[").append(clazz.getTypeName()).append("] ").append(clazz.getSimpleName()).append(" ->");
+
+            for(var current: metadata.getIntersects().entrySet()) {
+                var found = current.getKey();
+                var bound = current.getValue();
+
+                builder.append("\n\t\t[").append(found.getType().getSimpleName()).append("] ").append(found.getName()).append(" -> [").append(bound.getType().getSimpleName()).append("] ").append(bound.getName()).append(";");
             }
         }
 
-        return foundFields;
+        builder.append("\nresponses: ");
+
+        for(var mutator: responseMap.entrySet()) {
+            var clazz = mutator.getKey();
+            var metadata = mutator.getValue();
+
+            builder.append("\n\t[").append(clazz.getTypeName()).append("] ").append(clazz.getSimpleName()).append(" ->");
+
+            for(var current: metadata.getIntersects().entrySet()) {
+                var found = current.getKey();
+                var bound = current.getValue();
+
+                builder.append("\n\t\t[").append(found.getType().getSimpleName()).append("] ").append(found.getName()).append(" <- [").append(bound.getType().getSimpleName()).append("] ").append(bound.getName()).append(";");
+            }
+        }
+
+        return builder.toString();
     }
 }
