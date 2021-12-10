@@ -42,8 +42,9 @@ public class ConversionProvider {
         var factory = this.factory.getFactory();
         var store = this.factory.getStore();
         var metadata = store.getBound(clazz);
+        var founds = metadata.getFoundFields();
 
-        for(var current: metadata.getFound()) {
+        for(var current: founds) {
             var jsonName = factory.convertFieldName(current.getName());
 
             if (mirror.containsKey(jsonName)) {

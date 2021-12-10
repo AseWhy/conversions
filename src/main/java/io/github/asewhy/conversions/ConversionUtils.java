@@ -3,10 +3,7 @@ package io.github.asewhy.conversions;
 import io.github.asewhy.conversions.support.annotations.Identifier;
 import org.jetbrains.annotations.NotNull;
 
-import java.lang.reflect.AccessibleObject;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.*;
 import java.util.*;
 
 class ConversionUtils {
@@ -85,12 +82,55 @@ class ConversionUtils {
     }
 
     /**
+     * Безопасный вызов метода
+     *
+     * @param method метод
+     * @param caller инстанс класса метод которого вызываем
+     * @param args аргументы для вызова
+     * @return полученное значение
+     */
+    public static Object safeInvoke(Method method, Object caller, Object ...args) {
+        try {
+            var access = method.canAccess(caller);
+
+            method.setAccessible(true);
+
+            var found = method.invoke(caller, args);
+
+            method.setAccessible(access);
+
+            return found;
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Безопасно устанавливает значение полю
+     *
+     * @param field поле
+     * @param caller инстанс класса поле которого изменяем
+     */
+    public static void safeSet(Field field, Object caller, Object set) {
+        try {
+            var access = field.canAccess(caller);
+
+            field.setAccessible(true);
+
+            field.set(caller, set);
+
+            field.setAccessible(access);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
      * Безопасный доступ к полю
      *
      * @param field поле
      * @param caller инстанс класса поле которого получаем
      * @return полученное значение
-     * @throws IllegalAccessException если получить значение не удалось
      */
     public static Object safeAccess(Field field, Object caller) {
         try {

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuite tests="1" failures="0" name="io.github.asewhy.conversions.ConversionsTest" time="0.46" errors="0" skipped="0">
+<testsuite tests="1" failures="0" name="io.github.asewhy.conversions.ConversionsTest" time="0.351" errors="0" skipped="0">
   <properties>
     <property name="idea.version" value="2021.3"/>
     <property name="java.runtime.name" value="OpenJDK Runtime Environment"/>
@@ -41,7 +41,7 @@
     <property name="java.class.path" value="/snap/intellij-idea-community/337/plugins/maven/lib/maven3/boot/plexus-classworlds-2.6.0.jar:/snap/intellij-idea-community/337/plugins/maven/lib/maven3/boot/plexus-classworlds.license"/>
     <property name="java.vm.specification.version" value="17"/>
     <property name="sun.arch.data.model" value="64"/>
-    <property name="sun.java.command" value="org.codehaus.classworlds.Launcher -Didea.version=2021.3 install"/>
+    <property name="sun.java.command" value="org.codehaus.classworlds.Launcher -Didea.version=2021.3 deploy"/>
     <property name="java.home" value="/home/astecom/.jdks/openjdk-17.0.1"/>
     <property name="user.language" value="ru"/>
     <property name="java.specification.vendor" value="Oracle Corporation"/>
@@ -57,5 +57,5 @@
     <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
     <property name="sun.cpu.endian" value="little"/>
   </properties>
-  <testcase classname="io.github.asewhy.conversions.ConversionsTest" name="conversionsTest" time="0.46"/>
+  <testcase classname="io.github.asewhy.conversions.ConversionsTest" name="conversionsTest" time="0.351"/>
 </testsuite>

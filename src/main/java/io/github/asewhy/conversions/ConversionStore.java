@@ -1,5 +1,6 @@
 package io.github.asewhy.conversions;
 
+import io.github.asewhy.conversions.support.CaseUtil;
 import io.github.asewhy.conversions.support.ClassMetadata;
 import io.github.asewhy.conversions.support.annotations.MutatorDTO;
 import io.github.asewhy.conversions.support.annotations.ResponseDTO;
@@ -93,9 +94,12 @@ public class ConversionStore {
     public void registerResponse(Class<?> target, Class<?> response) {
         var metadata = getBound(target);
         var fieldsFound = metadata.getIntersects();
-        var fieldsTotal = metadata.getFound();
+        var fieldsTotal = metadata.getFoundFields();
+        var fieldsSetters = metadata.getBoundSetters();
+        var fieldsBound = metadata.getBoundFields();
         var foundFields = ConversionUtils.scanFieldsToMap(target);
         var boundFields = ConversionUtils.scanFieldsToMap(response);
+        var boundMethods = ConversionUtils.scanMethodsToMap(target);
 
         metadata.setBoundClass(response);
 
@@ -122,6 +126,17 @@ public class ConversionStore {
             }
         }
 
+        for(var current: boundFields.entrySet()) {
+            var field = current.getValue();
+            var setter = boundMethods.get("set" + CaseUtil.toPascalCase(current.getKey()));
+
+            if(setter != null) {
+                fieldsSetters.put(field, setter);
+            }
+
+            fieldsBound.put(field.getType(), field);
+        }
+
         responseMap.put(target, metadata);
     }
 
@@ -134,9 +149,12 @@ public class ConversionStore {
     public void registerMutator(Class<?> mutator, Class<?> target) {
         var metadata = getBound(mutator);
         var fieldsFound = metadata.getIntersects();
-        var fieldsTotal = metadata.getFound();
+        var fieldsTotal = metadata.getFoundFields();
+        var fieldsSetters = metadata.getBoundSetters();
+        var fieldsBound = metadata.getBoundFields();
         var foundFields = ConversionUtils.scanFieldsToMap(mutator);
         var boundFields = ConversionUtils.scanFieldsToMap(target);
+        var boundMethods = ConversionUtils.scanMethodsToMap(target);
 
         metadata.setBoundClass(target);
 
@@ -162,6 +180,17 @@ public class ConversionStore {
 
                 fieldsTotal.add(found);
             }
+        }
+
+        for(var current: boundFields.entrySet()) {
+            var field = current.getValue();
+            var setter = boundMethods.get("set" + CaseUtil.toPascalCase(current.getKey()));
+
+            if(setter != null) {
+                fieldsSetters.put(field, setter);
+            }
+
+            fieldsBound.put(field.getType(), field);
         }
 
         mutatorsMap.put(mutator, metadata);

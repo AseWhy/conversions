@@ -29,6 +29,30 @@ public abstract class ConversionMutator<T> {
     }
 
     /**
+     * Заполняет родительскую сущность для сущности T
+     *
+     * @param fill объект заполнения
+     * @param parent родительская сущность
+     */
+    protected void fillParent(T fill, Object parent) {
+        var parentClazz = parent.getClass();
+        var metadata = store.getBound(this.getClass());
+        var parentField = metadata.getBoundField(parentClazz);
+
+        if(parentField != null) {
+            var parentSetter = metadata.getAvailableBoundSetter(parentField);
+
+            if(parentSetter != null) {
+                ConversionUtils.safeInvoke(parentSetter, fill, parent);
+            } else {
+                ConversionUtils.safeSet(parentField, fill, parent);
+            }
+        }
+
+        fillParentInternal(fill, parent, factory.provideContext());
+    }
+
+    /**
      * Заполнить целевую сущность значениями из этого мутатора
      *
      * @param fill сущность для заполнения
@@ -72,15 +96,18 @@ public abstract class ConversionMutator<T> {
                     var exists = bound.get(fill);
 
                     if(received != null) {
-                        if(received instanceof ConversionMutator mutator) {
-                            if(exists != null) {
-                                received = mutator.fill(exists);
-                            } else {
-                                received = mutator.fill(boundType.getConstructor().newInstance());
+                        if(received instanceof ConversionMutator mutator && requireProcessNested(mutator)) {
+                            if(exists == null) {
+                                exists = boundType.getConstructor().newInstance();
                             }
+
+                            mutator.fill(exists);
+                            mutator.fillParent(exists, fill);
+
+                            received = exists;
                         }
 
-                        if(received instanceof Collection<?> foundCollection) {
+                        if(received instanceof Collection<?> foundCollection && requireProcessNested(foundCollection)) {
                             var foundSubtype = ConversionUtils.findXGeneric(found);
                             var boundSubtype = ConversionUtils.findXGeneric(bound);
                             var foundIdField = ConversionUtils.findTypeId(foundSubtype);
@@ -113,6 +140,7 @@ public abstract class ConversionMutator<T> {
                                         }
 
                                         mutator.fill(existsItem);
+                                        mutator.fillParent(existsItem, fill);
                                     }
                                 }
 
@@ -131,7 +159,13 @@ public abstract class ConversionMutator<T> {
             bound.setAccessible(boundAccess);
         }
 
-        return fillInternal(fill, factory.provideContext());
+        fillInternal(fill, factory.provideContext());
+
+        return fill;
+    }
+
+    public boolean requireProcessNested(Object object) {
+        return true;
     }
 
     public boolean hasField(Field field) {
@@ -146,7 +180,11 @@ public abstract class ConversionMutator<T> {
         return new HashSet<>(this.touchedFields);
     }
 
-    protected T fillInternal(T fill, Object context) {
-        return fill;
+    protected void fillParentInternal(T fill, Object parent, Object context) {
+        // Do not nothing
+    }
+
+    protected void fillInternal(T fill, Object context) {
+        // Do not nothing
     }
 }
