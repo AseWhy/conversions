@@ -131,7 +131,11 @@ public class ConversionStore {
             var setter = boundMethods.get("set" + CaseUtil.toPascalCase(current.getKey()));
 
             if(setter != null) {
-                fieldsSetters.put(field, setter);
+                var parameters = setter.getParameterTypes();
+
+                if(parameters.length > 0 && parameters[0] == field.getType()) {
+                    fieldsSetters.put(field, setter);
+                }
             }
 
             fieldsBound.put(field.getType(), field);

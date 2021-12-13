@@ -2,6 +2,7 @@ package io.github.asewhy.conversions;
 
 import io.github.asewhy.conversions.support.annotations.ShiftController;
 import io.github.asewhy.conversions.support.annotations.ConvertResponse;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.web.HttpMediaTypeNotAcceptableException;
@@ -42,8 +43,8 @@ public class ResponseMessageHandler extends RequestResponseBodyMethodProcessor {
     @Override
     public void handleReturnValue(
         Object returnValue,
-        MethodParameter returnType,
-        ModelAndViewContainer mavContainer,
+        @NotNull MethodParameter returnType,
+        @NotNull ModelAndViewContainer mavContainer,
         NativeWebRequest webRequest
     ) throws HttpMediaTypeNotAcceptableException, IOException {
         var httpServletRequest = webRequest.getNativeResponse(HttpServletResponse.class);
@@ -58,7 +59,7 @@ public class ResponseMessageHandler extends RequestResponseBodyMethodProcessor {
                     converted = provider.createResponse(returnValue);
                 }
             } else {
-                converted = returnType;
+                converted = returnValue;
             }
 
             super.handleReturnValue(converted, returnType, mavContainer, webRequest);

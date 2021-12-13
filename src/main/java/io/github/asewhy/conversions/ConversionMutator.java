@@ -2,6 +2,8 @@ package io.github.asewhy.conversions;
 
 import io.github.asewhy.conversions.support.iConversionFactory;
 import lombok.extern.log4j.Log4j2;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -68,6 +70,7 @@ public abstract class ConversionMutator<T> {
         //
         var metadata = store.getBound(this.getClass());
         var foundFields = metadata.getIntersects();
+        var context = factory.provideContext();
 
         //
         // Перебираю поля, с совпадающими типами
@@ -86,6 +89,7 @@ public abstract class ConversionMutator<T> {
             var boundType = bound.getType();
             var foundAccess = found.canAccess(this);
             var boundAccess = bound.canAccess(fill);
+            var parentSetter = metadata.getAvailableBoundSetter(bound);
 
             found.setAccessible(true);
             bound.setAccessible(true);
@@ -149,7 +153,13 @@ public abstract class ConversionMutator<T> {
                         }
                     }
 
-                    bound.set(fill, received);
+                    if(requireProcessField(found.getName(), context, fill)) {
+                        if(parentSetter != null) {
+                            parentSetter.invoke(fill, received);
+                        } else {
+                            bound.set(fill, received);
+                        }
+                    }
                 }
             } catch (IllegalAccessException | InvocationTargetException | InstantiationException | NoSuchMethodException e) {
                 throw new RuntimeException(e);
@@ -159,24 +169,29 @@ public abstract class ConversionMutator<T> {
             bound.setAccessible(boundAccess);
         }
 
-        fillInternal(fill, factory.provideContext());
+        fillInternal(fill, context);
 
         return fill;
+    }
+
+    public boolean requireProcessField(String name, Object context, T fill) {
+        return true;
     }
 
     public boolean requireProcessNested(Object object) {
         return true;
     }
 
-    public boolean hasField(Field field) {
+    public final boolean hasField(@NotNull Field field) {
         return hasField(field.getName());
     }
 
-    public boolean hasField(String name) {
+    public final boolean hasField(String name) {
         return touchedFields.contains(factory.convertFieldName(name));
     }
 
-    public Set<String> getAvailableFields() {
+    @Contract(" -> new")
+    public final @NotNull Set<String> getAvailableFields() {
         return new HashSet<>(this.touchedFields);
     }
 
