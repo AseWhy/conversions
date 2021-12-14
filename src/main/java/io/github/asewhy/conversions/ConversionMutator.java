@@ -38,7 +38,7 @@ public abstract class ConversionMutator<T> {
      */
     protected void fillParent(T fill, Object parent) {
         var parentClazz = parent.getClass();
-        var metadata = store.getBound(this.getClass());
+        var metadata = store.getMutatorBound(this.getClass());
         var parentField = metadata.getBoundField(parentClazz);
 
         if(parentField != null) {
@@ -68,7 +68,7 @@ public abstract class ConversionMutator<T> {
         //
         // Получаю бинды для класса
         //
-        var metadata = store.getBound(this.getClass());
+        var metadata = store.getMutatorBound(this.getClass());
         var foundFields = metadata.getIntersects();
         var context = factory.provideContext();
 

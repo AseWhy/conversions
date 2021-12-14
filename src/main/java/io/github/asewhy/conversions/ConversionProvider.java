@@ -41,7 +41,7 @@ public class ConversionProvider {
         var clazz = from.getClass();
         var factory = this.factory.getFactory();
         var store = this.factory.getStore();
-        var metadata = store.getBound(clazz);
+        var metadata = store.getMutatorBound(clazz);
         var founds = metadata.getFoundFields();
 
         for(var current: founds) {
@@ -94,12 +94,12 @@ public class ConversionProvider {
      * @param <R> типа, объекта конверсии (исходного объекта)
      * @return конвертированный объект
      */
-    public <L extends Collection<R>, T extends ConversionResponse<R>, R> Collection<T> createResponse(L from) {
+    public <L extends Collection<R>, T extends ConversionResponse<R>, R> Collection<T> createResponse(L from, String mapping) {
         var iterator = from.iterator();
         var result = new ArrayList<T>();
 
         while(iterator.hasNext()) {
-            result.add(createResponse(iterator.next()));
+            result.add(createResponse(iterator.next(), mapping));
         }
 
         return result;
@@ -113,19 +113,44 @@ public class ConversionProvider {
      * @param <R> тип сущности, из которой будет создана сущность ответа
      */
     public <T extends ConversionResponse<R>, R> T createResponse(R from) {
-        var store = factory.getStore();
+        return createResponse(from, ConversionUtils.COMMON_MAPPING, true);
+    }
 
+    /**
+     * Создать ответ из сущности from
+     *
+     * @param from исходная сущность для создания ответа
+     * @param <T> тип сущности ответа
+     * @param <R> тип сущности, из которой будет создана сущность ответа
+     */
+    public <T extends ConversionResponse<R>, R> T createResponse(R from, String mapping) {
+        return createResponse(from, mapping, true);
+    }
+
+    /**
+     * Создать ответ из сущности from
+     *
+     * @param from исходная сущность для создания ответа
+     * @param <T> тип сущности ответа
+     * @param <R> тип сущности, из которой будет создана сущность ответа
+     */
+    public <T extends ConversionResponse<R>, R> T createResponse(R from, String mapping, Boolean applyMappingConversion) {
         if(from == null) {
             return null;
         }
 
-        var fromClass = from.getClass();
+        var store = factory.getStore();
+        var fromClass = ConversionUtils.skipAnonClasses(from.getClass());
 
-        if(fromClass.getSimpleName().equals("")) {
-            //
-            // Анонимные классы не имеют названия
-            //
-            fromClass = fromClass.getSuperclass();
+        if(applyMappingConversion) {
+            var resolver = store.findMappingResolver(fromClass);
+
+            if(resolver != null) {
+                mapping = resolver.resolveMapping(mapping);
+                applyMappingConversion = resolver.propagation(mapping);
+            } else {
+                applyMappingConversion = false;
+            }
         }
 
         if(!store.isPresentResponse(fromClass)) {
@@ -136,7 +161,7 @@ public class ConversionProvider {
         }
 
         var instance = (T) null;
-        var metadata = store.getBound(fromClass);
+        var metadata = store.getResponseBound(fromClass, mapping);
         var boundClass = metadata.getBoundClass();
         var foundFields = metadata.getIntersects();
 
@@ -175,14 +200,14 @@ public class ConversionProvider {
 
                 if(result != null) {
                     if(ConversionResponse.class.isAssignableFrom(boundType)) {
-                        result = createResponse(result);
+                        result = createResponse(result, mapping, applyMappingConversion);
                     }
 
                     if(result instanceof Collection<?> collection) {
                         var tempArray = new ArrayList<>();
 
                         for(var item: collection) {
-                            tempArray.add(createResponse(item));
+                            tempArray.add(createResponse(item, mapping, applyMappingConversion));
                         }
 
                         result = tempArray;
@@ -198,7 +223,7 @@ public class ConversionProvider {
             bound.setAccessible(boundAccess);
         }
 
-        instance.fillInternal(from, factory.getFactory().provideContext());
+        instance.fillInternal(from, this, factory.getFactory().provideContext());
 
         return instance;
     }

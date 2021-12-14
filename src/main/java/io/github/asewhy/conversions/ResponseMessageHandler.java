@@ -15,7 +15,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 
-public class ResponseMessageHandler extends RequestResponseBodyMethodProcessor {
+public final class ResponseMessageHandler extends RequestResponseBodyMethodProcessor {
     private final ConversionProvider provider;
 
     public ResponseMessageHandler(List<HttpMessageConverter<?>> converters, ConversionProvider provider) {
@@ -51,12 +51,13 @@ public class ResponseMessageHandler extends RequestResponseBodyMethodProcessor {
 
         if(httpServletRequest != null) {
             var converted = (Object) null;
+            var mapping = getMappingName(returnType);
 
             if(canProcess(returnType)) {
                 if (returnValue instanceof Collection<?> collection) {
-                    converted = provider.createResponse(collection);
+                    converted = provider.createResponse(collection, mapping);
                 } else {
-                    converted = provider.createResponse(returnValue);
+                    converted = provider.createResponse(returnValue, mapping);
                 }
             } else {
                 converted = returnValue;
@@ -64,6 +65,35 @@ public class ResponseMessageHandler extends RequestResponseBodyMethodProcessor {
 
             super.handleReturnValue(converted, returnType, mavContainer, webRequest);
         }
+    }
+
+    /**
+     * Получить название маппинга для текущей конвертируемой сущности
+     *
+     * @param parameter конвертируемый параметр
+     * @return маппинг
+     */
+    private String getMappingName(MethodParameter parameter) {
+        var annotation = parameter.getParameterAnnotation(ConvertResponse.class);
+        var annotatedClass = parameter.getContainingClass();
+
+        if(annotation != null) {
+            return annotation.mapping();
+        }
+
+        annotation = annotatedClass.getAnnotation(ConvertResponse.class);
+
+        if(annotation != null) {
+            return annotation.mapping();
+        }
+
+        var controller = annotatedClass.getAnnotation(ShiftController.class);
+
+        if(controller != null) {
+            return controller.mapping();
+        }
+
+        return ConversionUtils.COMMON_MAPPING;
     }
 
     /**

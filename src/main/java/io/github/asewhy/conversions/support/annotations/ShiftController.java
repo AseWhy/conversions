@@ -1,5 +1,6 @@
 package io.github.asewhy.conversions.support.annotations;
 
+import io.github.asewhy.conversions.ConversionUtils;
 import org.springframework.core.annotation.AliasFor;
 import org.springframework.stereotype.Controller;
 
@@ -23,4 +24,9 @@ public @interface ShiftController {
      */
     @AliasFor(annotation = Controller.class)
     String value() default "";
+    /**
+     * Маппинг для конвертера
+     */
+    @AliasFor(annotation = ConvertResponse.class)
+    String mapping() default ConversionUtils.COMMON_MAPPING;
 }

@@ -6,7 +6,55 @@ import org.jetbrains.annotations.NotNull;
 import java.lang.reflect.*;
 import java.util.*;
 
-class ConversionUtils {
+public class ConversionUtils {
+    public final static String COMMON_MAPPING = "common";
+
+    /**
+     * Быстрый поиск по карте, ключом в которой является класс, метод учитывает наследование классов
+     *
+     * @param input входящая карта с классами
+     * @param key ключ для поиска
+     * @param <T> тип значений карты
+     * @return значение или null если не нашел (так-же будет кеширован null на текущий ключ)
+     */
+    public static <T> T findOnClassMap(Map<Class<?>, T> input, Class<?> key) {
+        if(input.containsKey(key)) {
+            return input.get(key);
+        }
+
+        for (var current: input.entrySet()) {
+            var parent = current.getKey();
+
+            if(parent.isAssignableFrom(key)) {
+                input.put(key, current.getValue());
+
+                return current.getValue();
+            }
+        }
+
+        input.put(key, null);
+
+        return null;
+    }
+
+    /**
+     * Пропустить анонимный класс, если он есть, и получить элемент ниже по дереву зависимостей
+     *
+     * @param clazz класс для пропуска анонимного класса
+     * @param <T> типа класса
+     * @return класс который нам нужен
+     */
+    public static <T> Class<? super T> skipAnonClasses(Class<T> clazz) {
+        if(clazz.getSimpleName().equals("")) {
+            //
+            // Анонимные классы не имеют названия
+            //
+            return clazz.getSuperclass();
+        }
+
+        return clazz;
+    }
+
     /**
      * Получает поле идентификатор в целевом классе.
      *

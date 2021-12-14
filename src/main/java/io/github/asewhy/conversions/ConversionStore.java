@@ -4,20 +4,40 @@ import io.github.asewhy.conversions.support.CaseUtil;
 import io.github.asewhy.conversions.support.ClassMetadata;
 import io.github.asewhy.conversions.support.annotations.MutatorDTO;
 import io.github.asewhy.conversions.support.annotations.ResponseDTO;
+import io.github.asewhy.conversions.support.annotations.ResponseResolver;
 import lombok.extern.log4j.Log4j2;
+import org.jetbrains.annotations.NotNull;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 @Log4j2
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "unchecked"})
 public class ConversionStore {
     private final Map<Class<?>, ClassMetadata> mutatorsMap = new HashMap<>();
-    private final Map<Class<?>, ClassMetadata> responseMap = new HashMap<>();
+    private final Map<Class<?>, Map<String, ClassMetadata>> responseMap = new HashMap<>();
+    private final Map<Class<?>, ConversionResolver<?>> resolversMap = new HashMap<>();
+
+    /**
+     * Получить маппинг из класса
+     *
+     * @param clazz класс для получения маппинга
+     * @return найденный маппинг или common
+     */
+    public String getEntityMapping(Class<?> clazz) {
+        if(ConversionResponse.class.isAssignableFrom(clazz)) {
+            var annotation = clazz.getAnnotation(ResponseDTO.class);
+            return annotation != null ? annotation.mapping() : ConversionUtils.COMMON_MAPPING;
+        } else {
+            return ConversionUtils.COMMON_MAPPING;
+        }
+    }
 
     /**
      * Проверяет, иметься ли такой тип ответа в наличии в текущем сторе
@@ -26,7 +46,7 @@ public class ConversionStore {
      * @return true если имеется
      */
     public boolean isPresentResponse(Class<?> clazz) {
-        return responseMap.containsKey(clazz);
+        return clazz != null && ConversionUtils.findOnClassMap(responseMap, clazz) != null;
     }
 
     /**
@@ -36,7 +56,7 @@ public class ConversionStore {
      * @return true если имеется
      */
     public boolean isPresentMutator(Class<?> clazz) {
-        return mutatorsMap.containsKey(clazz);
+        return clazz != null && ConversionUtils.findOnClassMap(mutatorsMap, clazz) != null;
     }
 
     /**
@@ -49,6 +69,7 @@ public class ConversionStore {
 
         scanner.addIncludeFilter(new AnnotationTypeFilter(MutatorDTO.class));
         scanner.addIncludeFilter(new AnnotationTypeFilter(ResponseDTO.class));
+        scanner.addIncludeFilter(new AnnotationTypeFilter(ResponseResolver.class));
 
         for(var current: scanner.findCandidateComponents(packageName)) {
             try {
@@ -58,7 +79,8 @@ public class ConversionStore {
                 if(
                     generic != null && (
                         ConversionMutator.class.isAssignableFrom(clazz) && clazz.isAnnotationPresent(MutatorDTO.class) ||
-                        ConversionResponse.class.isAssignableFrom(clazz) && clazz.isAnnotationPresent(ResponseDTO.class)
+                        ConversionResponse.class.isAssignableFrom(clazz) && clazz.isAnnotationPresent(ResponseDTO.class) ||
+                        ConversionResolver.class.isAssignableFrom(clazz) && clazz.isAssignableFrom(ResponseResolver.class)
                     )
                 ) {
                     register(clazz, generic);
@@ -80,8 +102,26 @@ public class ConversionStore {
             this.registerResponse(target, reg);
         } else if(ConversionMutator.class.isAssignableFrom(reg)) {
             this.registerMutator(reg, target);
+        } else if(ConversionResolver.class.isAssignableFrom(reg)) {
+            this.registerResolver(reg, target);
         } else {
             throw new IllegalArgumentException("Received class is not ConversionResponse or ConversionMutator");
+        }
+    }
+
+    /**
+     * Зарегистрировать обработчик типов ответа
+     *
+     * @param reg регистрируемый обработчик
+     * @param target цель обработчика, сущности ответа какого типа он будет обрабатывать
+     */
+    private void registerResolver(Class<?> reg, Class<?> target) {
+        try {
+            this.resolversMap.put(target, (ConversionResolver<?>) reg.getConstructor().newInstance());
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException("Cannot find default constructor on " + reg.getName(), e);
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -91,8 +131,10 @@ public class ConversionStore {
      * @param target целевой тип ответа, с которого будет происходить маппинг <T> у {@link ConversionResponse}
      * @param response регистрируемый тип ответа, на который будет происходить маппинг, сам {@link ConversionResponse}
      */
-    public void registerResponse(Class<?> target, Class<?> response) {
-        var metadata = getBound(target);
+    private void registerResponse(Class<?> target, Class<?> response) {
+        var mapping = getEntityMapping(target);
+        var metadataMap = getResponseBound(target);
+        var metadata = metadataMap.computeIfAbsent(mapping, (e) -> new ClassMetadata());
         var fieldsFound = metadata.getIntersects();
         var fieldsTotal = metadata.getFoundFields();
         var fieldsSetters = metadata.getBoundSetters();
@@ -141,7 +183,7 @@ public class ConversionStore {
             fieldsBound.put(field.getType(), field);
         }
 
-        responseMap.put(target, metadata);
+        responseMap.putIfAbsent(target, metadataMap);
     }
 
     /**
@@ -150,8 +192,8 @@ public class ConversionStore {
      * @param mutator мутатор, с которого будет происходить маппинг {@link ConversionMutator}
      * @param target подтип мутатора на который будет происходить маппинг <T> у {@link ConversionMutator}
      */
-    public void registerMutator(Class<?> mutator, Class<?> target) {
-        var metadata = getBound(mutator);
+    private void registerMutator(Class<?> mutator, Class<?> target) {
+        var metadata = getMutatorBound(mutator);
         var fieldsFound = metadata.getIntersects();
         var fieldsTotal = metadata.getFoundFields();
         var fieldsSetters = metadata.getBoundSetters();
@@ -213,7 +255,14 @@ public class ConversionStore {
         if(requireBeConverter == null) {
             return false;
         } else {
-            return ConversionUtils.findXGeneric(compare) == ConversionUtils.findXGeneric(requireBeConverter);
+            var sourceGeneric = ConversionUtils.findXGeneric(requireBeConverter);
+            var compareGeneric = ConversionUtils.findXGeneric(compare);
+
+            if(compareGeneric != null && sourceGeneric != null) {
+                return sourceGeneric.isAssignableFrom(compareGeneric);
+            } else {
+                return false;
+            }
         }
     }
 
@@ -229,63 +278,62 @@ public class ConversionStore {
     }
 
     /**
+     * Найти подходящий текущему классу обработчик маппингов
+     *
+     * @param forClass Класс для поиска обработчика
+     * @param <T> тип обработчика
+     * @return найденный обработчик или null
+     */
+    public <T> ConversionResolver<T> findMappingResolver(Class<? extends T> forClass) {
+        return (ConversionResolver<T>) ConversionUtils.findOnClassMap(resolversMap, forClass);
+    }
+
+    /**
      * Получить бинды для класса конвертера
      *
      * @param forClass класс для получения биндов
      * @return найденные бинды, или пустая карта
      */
-    protected ClassMetadata getBound(Class<?> forClass) {
-        var result = (ClassMetadata) null;
+    protected @NotNull Map<String, ClassMetadata> getResponseBound(Class<?> forClass) {
+        var result = ConversionUtils.findOnClassMap(responseMap, forClass);
 
-        if(ConversionMutator.class.isAssignableFrom(forClass)) {
-            result = this.mutatorsMap.get(forClass);
-        } else {
-            result = this.responseMap.get(forClass);
+        if(result == null) {
+            result = new HashMap<>();
         }
+
+        return result;
+    }
+
+    /**
+     * Получить бинды для класса конвертера
+     *
+     * @param forClass класс для получения биндов
+     * @param mapping маппинг для поиска
+     * @return найденные бинды, или пустая карта
+     */
+    protected @NotNull ClassMetadata getResponseBound(Class<?> forClass, String mapping) {
+        var source = this.getResponseBound(forClass);
+
+        if(!source.containsKey(mapping)) {
+            mapping = ConversionUtils.COMMON_MAPPING;
+        }
+
+        return Objects.requireNonNullElseGet(source.get(mapping), ClassMetadata::new);
+    }
+
+    /**
+     * Получить бинды для класса конвертера
+     *
+     * @param forClass класс для получения биндов
+     * @return найденные бинды, или пустая карта
+     */
+    protected @NotNull ClassMetadata getMutatorBound(Class<?> forClass) {
+        var result = this.mutatorsMap.get(forClass);
 
         if(result == null) {
             result = new ClassMetadata();
         }
 
         return result;
-    }
-
-    @Override
-    public String toString() {
-        var builder = new StringBuilder();
-
-        builder.append("mutators: ");
-
-        for(var mutator: mutatorsMap.entrySet()) {
-            var clazz = mutator.getKey();
-            var metadata = mutator.getValue();
-
-            builder.append("\n\t[").append(clazz.getTypeName()).append("] ").append(clazz.getSimpleName()).append(" ->");
-
-            for(var current: metadata.getIntersects().entrySet()) {
-                var found = current.getKey();
-                var bound = current.getValue();
-
-                builder.append("\n\t\t[").append(found.getType().getSimpleName()).append("] ").append(found.getName()).append(" -> [").append(bound.getType().getSimpleName()).append("] ").append(bound.getName()).append(";");
-            }
-        }
-
-        builder.append("\nresponses: ");
-
-        for(var mutator: responseMap.entrySet()) {
-            var clazz = mutator.getKey();
-            var metadata = mutator.getValue();
-
-            builder.append("\n\t[").append(clazz.getTypeName()).append("] ").append(clazz.getSimpleName()).append(" ->");
-
-            for(var current: metadata.getIntersects().entrySet()) {
-                var found = current.getKey();
-                var bound = current.getValue();
-
-                builder.append("\n\t\t[").append(found.getType().getSimpleName()).append("] ").append(found.getName()).append(" <- [").append(bound.getType().getSimpleName()).append("] ").append(bound.getName()).append(";");
-            }
-        }
-
-        return builder.toString();
     }
 }

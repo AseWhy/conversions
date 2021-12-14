@@ -44,6 +44,8 @@ public class ConversionsTest {
         var result = provider.createResponse(book);
         var timeSkip = System.currentTimeMillis() - stamp;
 
+        System.out.println("TOOK " + timeSkip + " (ms)");
+
         if(result instanceof ExampleTestBookResponseConverter bookResponse) {
             Assertions.assertThat(timeSkip).isLessThan(10);
             Assertions.assertThat(bookResponse.getAuthors()).hasSize(20);
