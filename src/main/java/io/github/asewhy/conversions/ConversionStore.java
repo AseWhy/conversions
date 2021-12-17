@@ -33,7 +33,12 @@ public class ConversionStore {
     public String getEntityMapping(Class<?> clazz) {
         if(ConversionResponse.class.isAssignableFrom(clazz)) {
             var annotation = clazz.getAnnotation(ResponseDTO.class);
-            return annotation != null ? annotation.mapping() : ConversionUtils.COMMON_MAPPING;
+
+            if(annotation != null) {
+                return annotation.mapping();
+            } else {
+                return ConversionUtils.COMMON_MAPPING;
+            }
         } else {
             return ConversionUtils.COMMON_MAPPING;
         }
@@ -132,16 +137,18 @@ public class ConversionStore {
      * @param response регистрируемый тип ответа, на который будет происходить маппинг, сам {@link ConversionResponse}
      */
     private void registerResponse(Class<?> target, Class<?> response) {
-        var mapping = getEntityMapping(target);
+        var mapping = getEntityMapping(response);
         var metadataMap = getResponseBound(target);
         var metadata = metadataMap.computeIfAbsent(mapping, (e) -> new ClassMetadata());
         var fieldsFound = metadata.getIntersects();
         var fieldsTotal = metadata.getFoundFields();
         var fieldsSetters = metadata.getBoundSetters();
+        var fieldsGetters = metadata.getFoundGetters();
         var fieldsBound = metadata.getBoundFields();
         var foundFields = ConversionUtils.scanFieldsToMap(target);
         var boundFields = ConversionUtils.scanFieldsToMap(response);
-        var boundMethods = ConversionUtils.scanMethodsToMap(target);
+        var foundMethods = ConversionUtils.scanMethodsToMap(target);
+        var boundMethods = ConversionUtils.scanMethodsToMap(response);
 
         metadata.setBoundClass(response);
 
@@ -183,6 +190,15 @@ public class ConversionStore {
             fieldsBound.put(field.getType(), field);
         }
 
+        for(var current: foundFields.entrySet()) {
+            var field = current.getValue();
+            var getter = foundMethods.get("get" + CaseUtil.toPascalCase(current.getKey()));
+
+            if(getter != null && getter.getReturnType() == field.getType()) {
+                fieldsGetters.put(field, getter);
+            }
+        }
+
         responseMap.putIfAbsent(target, metadataMap);
     }
 
@@ -197,9 +213,11 @@ public class ConversionStore {
         var fieldsFound = metadata.getIntersects();
         var fieldsTotal = metadata.getFoundFields();
         var fieldsSetters = metadata.getBoundSetters();
+        var fieldsGetters = metadata.getFoundGetters();
         var fieldsBound = metadata.getBoundFields();
         var foundFields = ConversionUtils.scanFieldsToMap(mutator);
         var boundFields = ConversionUtils.scanFieldsToMap(target);
+        var foundMethods = ConversionUtils.scanMethodsToMap(mutator);
         var boundMethods = ConversionUtils.scanMethodsToMap(target);
 
         metadata.setBoundClass(target);
@@ -239,6 +257,15 @@ public class ConversionStore {
             fieldsBound.put(field.getType(), field);
         }
 
+        for(var current: foundFields.entrySet()) {
+            var field = current.getValue();
+            var getter = foundMethods.get("get" + CaseUtil.toPascalCase(current.getKey()));
+
+            if(getter != null && getter.getReturnType() == field.getType()) {
+                fieldsGetters.put(field, getter);
+            }
+        }
+
         mutatorsMap.put(mutator, metadata);
     }
 
@@ -255,8 +282,13 @@ public class ConversionStore {
         if(requireBeConverter == null) {
             return false;
         } else {
-            var sourceGeneric = ConversionUtils.findXGeneric(requireBeConverter);
             var compareGeneric = ConversionUtils.findXGeneric(compare);
+
+            if(compareGeneric != null && requireBeConverter == compareGeneric) {
+                return true;
+            }
+
+            var sourceGeneric = ConversionUtils.findXGeneric(requireBeConverter);
 
             if(compareGeneric != null && sourceGeneric != null) {
                 return sourceGeneric.isAssignableFrom(compareGeneric);
@@ -295,7 +327,7 @@ public class ConversionStore {
      * @return найденные бинды, или пустая карта
      */
     protected @NotNull Map<String, ClassMetadata> getResponseBound(Class<?> forClass) {
-        var result = ConversionUtils.findOnClassMap(responseMap, forClass);
+        var result = responseMap.get(forClass);
 
         if(result == null) {
             result = new HashMap<>();
@@ -312,7 +344,11 @@ public class ConversionStore {
      * @return найденные бинды, или пустая карта
      */
     protected @NotNull ClassMetadata getResponseBound(Class<?> forClass, String mapping) {
-        var source = this.getResponseBound(forClass);
+        var source = ConversionUtils.findOnClassMap(responseMap, forClass);
+
+        if(source == null) {
+            source = new HashMap<>();
+        }
 
         if(!source.containsKey(mapping)) {
             mapping = ConversionUtils.COMMON_MAPPING;

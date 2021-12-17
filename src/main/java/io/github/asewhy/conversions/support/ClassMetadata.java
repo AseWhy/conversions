@@ -29,9 +29,17 @@ public class ClassMetadata {
     //
     private Map<Field, Method> boundSetters = new HashMap<>();
     //
+    // Сеттеры для всех найденных полей
+    //
+    private Map<Field, Method> foundGetters = new HashMap<>();
+    //
     // Класс с которым искались пересечения
     //
     private Class<?> boundClass;
+    //
+    // True если получатель является картой вида ключ - значение
+    //
+    private Boolean isMap;
 
     /**
      * Найти поле по его типу
@@ -41,15 +49,5 @@ public class ClassMetadata {
      */
     public Field getBoundField(Class<?> forClass) {
         return boundFields.get(forClass);
-    }
-
-    /**
-     * Получить сеттер для поля
-     *
-     * @param forField поле для которого будет происходить поиск
-     * @return получить доступный для установки сеттер
-     */
-    public Method getAvailableBoundSetter(Field forField) {
-        return boundSetters.get(forField);
     }
 }

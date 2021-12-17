@@ -40,9 +40,10 @@ public abstract class ConversionMutator<T> {
         var parentClazz = parent.getClass();
         var metadata = store.getMutatorBound(this.getClass());
         var parentField = metadata.getBoundField(parentClazz);
+        var boundSetters = metadata.getBoundSetters();
 
         if(parentField != null) {
-            var parentSetter = metadata.getAvailableBoundSetter(parentField);
+            var parentSetter = boundSetters.get(parentField);
 
             if(parentSetter != null) {
                 ConversionUtils.safeInvoke(parentSetter, fill, parent);
@@ -70,6 +71,8 @@ public abstract class ConversionMutator<T> {
         //
         var metadata = store.getMutatorBound(this.getClass());
         var foundFields = metadata.getIntersects();
+        var boundSetters = metadata.getBoundSetters();
+        var foundGetters = metadata.getFoundGetters();
         var context = factory.provideContext();
 
         //
@@ -89,14 +92,13 @@ public abstract class ConversionMutator<T> {
             var boundType = bound.getType();
             var foundAccess = found.canAccess(this);
             var boundAccess = bound.canAccess(fill);
-            var parentSetter = metadata.getAvailableBoundSetter(bound);
 
             found.setAccessible(true);
             bound.setAccessible(true);
 
             try {
                 if(hasField(found)) {
-                    var received = found.get(this);
+                    var received = foundGetters.containsKey(found) ? ConversionUtils.safeInvoke(foundGetters.get(found), this) : found.get(this);
                     var exists = bound.get(fill);
 
                     if(received != null) {
@@ -122,7 +124,7 @@ public abstract class ConversionMutator<T> {
                                     //
                                     // Создадим инстанс нужной коллекции
                                     //
-                                    exists = boundType.getConstructor().newInstance();
+                                    exists = ConversionUtils.makeCollectionInstance(boundType);
                                 }
 
                                 var boundCollection = (Collection<Object>) exists;
@@ -154,8 +156,8 @@ public abstract class ConversionMutator<T> {
                     }
 
                     if(requireProcessField(found.getName(), context, fill)) {
-                        if(parentSetter != null) {
-                            parentSetter.invoke(fill, received);
+                        if(boundSetters.containsKey(bound)) {
+                            ConversionUtils.safeInvoke(boundSetters.get(bound), fill, received);
                         } else {
                             bound.set(fill, received);
                         }

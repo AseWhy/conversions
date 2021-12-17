@@ -6,6 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import java.lang.reflect.*;
 import java.util.*;
 
+@SuppressWarnings("rawtypes")
 public class ConversionUtils {
     public final static String COMMON_MAPPING = "common";
 
@@ -302,11 +303,11 @@ public class ConversionUtils {
 
             var interfaces = clazz.getInterfaces();
 
-            for(var field: List.of(clazz.getDeclaredFields())) {
+            for(var field: clazz.getDeclaredFields()) {
                 fields.put(field.getName(), field);
             }
 
-            for(var method: List.of(clazz.getDeclaredMethods())) {
+            for(var method: clazz.getDeclaredMethods()) {
                 fields.put(method.getName(), method);
             }
 
@@ -337,7 +338,7 @@ public class ConversionUtils {
 
             var interfaces = clazz.getInterfaces();
 
-            for(var method: List.of(clazz.getDeclaredMethods())) {
+            for(var method: clazz.getDeclaredMethods()) {
                 fields.put(method.getName(), method);
             }
 
@@ -368,7 +369,7 @@ public class ConversionUtils {
 
             var interfaces = clazz.getInterfaces();
 
-            for(var field: List.of(clazz.getDeclaredFields())) {
+            for(var field: clazz.getDeclaredFields()) {
                 fields.put(field.getName(), field);
             }
 
@@ -380,6 +381,26 @@ public class ConversionUtils {
         }
 
         return fields;
+    }
+
+    /**
+     * Получить новый безопасный инстанс коллекции
+     *
+     * @param clazz класс коллекции
+     * @return инстанс коллекции
+     */
+    public static Collection makeCollectionInstance(Class<?> clazz) {
+        if(Set.class == clazz) {
+            return new HashSet();
+        } else if(List.class == clazz) {
+            return new ArrayList();
+        } else {
+            try {
+                return (Collection) clazz.getConstructor().newInstance();
+            } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     public static Map<String, Method> scanMethodsToMap(Class<?> clazz) {

@@ -1,5 +1,6 @@
 package io.github.asewhy.conversions;
 
+import io.github.asewhy.conversions.support.annotations.ResponseDTO;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -164,6 +165,8 @@ public class ConversionProvider {
         var metadata = store.getResponseBound(fromClass, mapping);
         var boundClass = metadata.getBoundClass();
         var foundFields = metadata.getIntersects();
+        var getters = metadata.getFoundGetters();
+        var setters = metadata.getBoundSetters();
 
         try {
             instance = (T) boundClass.getConstructor().newInstance();
@@ -185,7 +188,17 @@ public class ConversionProvider {
             // Принимающий объект
             //
             var bound = current.getValue();
+            //
+            // Класс, которому принадлежит поле
+            //
+            var declaredClazz = bound.getDeclaringClass();
 
+            //
+            // Если класс, которому принадлежит поле не совпадает с классом биндинга, то ошибка
+            //
+            if(!declaredClazz.isAssignableFrom(boundClass)) {
+                throw new RuntimeException("Cannot cast " + declaredClazz.getName() + " to " + boundClass.getName() + "[ " + fromClass.getName() + " (" + mapping + ")]");
+            }
 
             var foundAccess = found.canAccess(from);
             var boundAccess = bound.canAccess(instance);
@@ -196,25 +209,39 @@ public class ConversionProvider {
             bound.setAccessible(true);
 
             try {
-                var result = found.get(from);
+                var result = getters.containsKey(found) ? ConversionUtils.safeInvoke(getters.get(found), from) : found.get(from);
 
                 if(result != null) {
                     if(ConversionResponse.class.isAssignableFrom(boundType)) {
-                        result = createResponse(result, mapping, applyMappingConversion);
+                        result = createResponse(result, getEntityMapping(boundType), applyMappingConversion);
                     }
 
                     if(result instanceof Collection<?> collection) {
-                        var tempArray = new ArrayList<>();
+                        var tempArray = ConversionUtils.makeCollectionInstance(foundType);
+                        var boundGeneric = ConversionUtils.findXGeneric(bound);
+                        var isBoundedArray = boundGeneric != null && ConversionResponse.class.isAssignableFrom(boundGeneric);
 
                         for(var item: collection) {
-                            tempArray.add(createResponse(item, mapping, applyMappingConversion));
+                            if(item == null) {
+                                continue;
+                            }
+
+                            if(isBoundedArray) {
+                                tempArray.add(createResponse(item, getEntityMapping(boundGeneric), applyMappingConversion));
+                            } else {
+                                tempArray.add(item);
+                            }
                         }
 
                         result = tempArray;
                     }
                 }
 
-                bound.set(instance, result);
+                if(setters.containsKey(bound)) {
+                    ConversionUtils.safeInvoke(setters.get(bound), instance, result);
+                } else {
+                    bound.set(instance, result);
+                }
             } catch (IllegalAccessException e) {
                 throw new RuntimeException(e);
             }
@@ -226,5 +253,26 @@ public class ConversionProvider {
         instance.fillInternal(from, this, factory.getFactory().provideContext());
 
         return instance;
+    }
+
+
+    /**
+     * Получить маппинг из класса
+     *
+     * @param clazz класс для получения маппинга
+     * @return найденный маппинг или common
+     */
+    public String getEntityMapping(Class<?> clazz) {
+        if(ConversionResponse.class.isAssignableFrom(clazz)) {
+            var annotation = clazz.getAnnotation(ResponseDTO.class);
+
+            if(annotation != null) {
+                return annotation.mapping();
+            } else {
+                return ConversionUtils.COMMON_MAPPING;
+            }
+        } else {
+            return ConversionUtils.COMMON_MAPPING;
+        }
     }
 }
