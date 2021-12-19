@@ -1,6 +1,7 @@
 package io.github.asewhy.conversions;
 
 import io.github.asewhy.conversions.support.annotations.ConvertMutator;
+import io.github.asewhy.conversions.support.annotations.ConvertRequest;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.core.MethodParameter;
 import org.springframework.web.bind.support.WebDataBinderFactory;
@@ -18,7 +19,7 @@ public record MutatorArgumentResolver(
 ) implements HandlerMethodArgumentResolver {
     @Override
     public boolean supportsParameter(MethodParameter parameter) {
-        return parameter.getParameterAnnotation(ConvertMutator.class) != null;
+        return parameter.getParameterAnnotation(ConvertMutator.class) != null || parameter.getParameterAnnotation(ConvertRequest.class) != null;
     }
 
     @Override
@@ -34,14 +35,19 @@ public record MutatorArgumentResolver(
 
         if (httpServletRequest != null) {
             var tree = objectMapper.readTree(httpServletRequest.getInputStream());
-            var parsed = objectMapper.treeToValue(tree, Map.class);
-            var result = objectMapper.treeToValue(tree, parameter.getParameterType());
 
-            if(factory.getStore().isPresentMutator(parameter.getParameterType()) && result instanceof ConversionMutator<?> mutator) {
-                provider.createMutator(mutator, parsed);
+            if(parameter.getParameterAnnotation(ConvertMutator.class) != null) {
+                var parsed = objectMapper.treeToValue(tree, Map.class);
+                var result = objectMapper.treeToValue(tree, parameter.getParameterType());
+
+                if (factory.getStore().isPresentMutator(parameter.getParameterType()) && result instanceof ConversionMutator<?> mutator) {
+                    provider.createMutator(mutator, parsed);
+                }
+
+                return result;
+            } else {
+                return objectMapper.treeToValue(tree, parameter.getParameterType());
             }
-
-            return result;
         }
 
         return Objects.requireNonNull(parameter.getConstructor()).newInstance();

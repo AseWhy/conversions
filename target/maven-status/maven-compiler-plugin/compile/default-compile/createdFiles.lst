@@ -10,6 +10,7 @@ io/github/asewhy/conversions/ConversionProvider.class
 io/github/asewhy/conversions/support/annotations/MutatorDTO.class
 io/github/asewhy/conversions/support/iBuildable.class
 io/github/asewhy/conversions/MutatorArgumentResolver.class
+io/github/asewhy/conversions/support/annotations/ConvertRequest.class
 io/github/asewhy/conversions/MutatorObjectBuilder.class
 io/github/asewhy/conversions/support/annotations/ShiftController.class
 io/github/asewhy/conversions/support/annotations/ConvertResponse.class
