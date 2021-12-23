@@ -13,6 +13,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -21,6 +22,21 @@ import java.util.stream.Stream;
 public class ConversionsTest {
     @Autowired
     protected ConversionProvider provider;
+
+    @Test
+    public void conversionMapResponse() {
+        var source = new HashMap<String, String>();
+
+        source.put("isbin", "sdasdasda");
+        source.put("name", "somename");
+
+        var stamp = System.currentTimeMillis();
+        var result = provider.createResponse(source, "some_mapping");
+        var timeSkip = System.currentTimeMillis() - stamp;
+
+        System.out.println("TOOK " + timeSkip + " (ms)");
+        System.out.println(result);
+    }
 
     @Test
     public void conversionsTest() {

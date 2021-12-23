@@ -3,7 +3,12 @@ package io.github.asewhy.conversions.support;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.asewhy.conversions.ConversionStore;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public interface iConversionFactory {
+    String ANY = "$any";
+
     /**
      * Функция поставщик стора
      *
@@ -25,6 +30,16 @@ public interface iConversionFactory {
      */
     default Object provideContext() {
         return null;
+    }
+
+    /**
+     * Поставщик исключений для convertFieldName, в случае совпадения типа поля или метода геттера, будет использоваться чистое имя
+     * поля, или чистое значение jsonProperty
+     *
+     * @return набор с классами полей, названия которых нужно резрешать с помощью стандартного механизма
+     */
+    default Map<Class<?>, String> provideExcludes() {
+        return new HashMap<>();
     }
 
     /**

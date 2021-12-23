@@ -45,12 +45,10 @@ public class ConversionProvider {
         var metadata = store.getMutatorBound(clazz);
         var founds = metadata.getFoundFields();
 
-        for(var current: founds) {
+        for (var current : founds) {
             var jsonName = factory.convertFieldName(current.getName());
 
             if (mirror.containsKey(jsonName)) {
-                from.touchedFields.add(jsonName);
-
                 var mirrorValue = mirror.get(jsonName);
                 var found = ConversionUtils.safeAccess(current, from);
 
@@ -82,6 +80,10 @@ public class ConversionProvider {
                         }
                     }
                 }
+
+                from.touchedFields.add(jsonName);
+            } else if(metadata.getIsMap()) {
+                from.touchedFields.add(jsonName);
             }
         }
     }
@@ -144,11 +146,11 @@ public class ConversionProvider {
         var fromClass = ConversionUtils.skipAnonClasses(from.getClass());
 
         if(applyMappingConversion) {
-            var resolver = store.findMappingResolver(fromClass);
+            var resolver = (ConversionResolver<Object>) store.findMappingResolver(fromClass);
 
             if(resolver != null) {
-                mapping = resolver.resolveMapping(mapping);
-                applyMappingConversion = resolver.propagation(mapping);
+                mapping = resolver.resolveMapping(from, mapping);
+                applyMappingConversion = resolver.propagation(from, mapping);
             } else {
                 applyMappingConversion = false;
             }
@@ -162,10 +164,12 @@ public class ConversionProvider {
         }
 
         var instance = (T) null;
+        var result = (Object) null;
+        var foundType = (Class<?>) null;
+        var boundType = (Class<?>) null;
+        var factory = this.factory.getFactory();
         var metadata = store.getResponseBound(fromClass, mapping);
         var boundClass = metadata.getBoundClass();
-        var foundFields = metadata.getIntersects();
-        var getters = metadata.getFoundGetters();
         var setters = metadata.getBoundSetters();
 
         try {
@@ -179,39 +183,78 @@ public class ConversionProvider {
         //
         // Перебираю поля, с совпадающими типами
         //
-        for(var current: foundFields.entrySet()) {
-            //
-            // Поставщик
-            //
-            var found = current.getKey();
-            //
-            // Принимающий объект
-            //
-            var bound = current.getValue();
-            //
-            // Класс, которому принадлежит поле
-            //
-            var declaredClazz = bound.getDeclaringClass();
-
-            //
-            // Если класс, которому принадлежит поле не совпадает с классом биндинга, то ошибка
-            //
-            if(!declaredClazz.isAssignableFrom(boundClass)) {
-                throw new RuntimeException("Cannot cast " + declaredClazz.getName() + " to " + boundClass.getName() + "[ " + fromClass.getName() + " (" + mapping + ")]");
-            }
-
-            var foundAccess = found.canAccess(from);
-            var boundAccess = bound.canAccess(instance);
-            var foundType = found.getType();
-            var boundType = bound.getType();
-
-            found.setAccessible(true);
-            bound.setAccessible(true);
-
-            try {
-                var result = getters.containsKey(found) ? ConversionUtils.safeInvoke(getters.get(found), from) : found.get(from);
+        if(metadata.getIsMap() && from instanceof Map map) {
+            for(var bound: metadata.getBoundFields()) {
+                result = map.containsKey(bound.getName()) ? map.get(bound.getName()) : map.get(factory.convertFieldName(bound.getName()));
 
                 if(result != null) {
+                    foundType = result.getClass();
+                    boundType = bound.getType();
+
+                    if(ConversionResponse.class.isAssignableFrom(boundType)) {
+                        result = createResponse(result, getEntityMapping(boundType), applyMappingConversion);
+                    }
+
+                    if(result instanceof Collection<?> collection) {
+                        var tempArray = ConversionUtils.makeCollectionInstance(foundType);
+                        var boundGeneric = ConversionUtils.findXGeneric(bound);
+                        var isBoundedArray = boundGeneric != null && ConversionResponse.class.isAssignableFrom(boundGeneric);
+
+                        for(var item: collection) {
+                            if(item == null) {
+                                continue;
+                            }
+
+                            if(isBoundedArray) {
+                                tempArray.add(createResponse(item, getEntityMapping(boundGeneric), applyMappingConversion));
+                            } else {
+                                tempArray.add(item);
+                            }
+                        }
+
+                        result = tempArray;
+                    }
+                } else {
+                    foundType = null;
+                    boundType = null;
+                }
+
+                if(foundType == null || foundType.isAssignableFrom(boundType)) {
+                    if(setters.containsKey(bound)) {
+                        ConversionUtils.safeInvoke(setters.get(bound), instance, result);
+                    } else {
+                        ConversionUtils.safeSet(bound, instance, result);
+                    }
+                }
+            }
+        } else {
+            for(var current: metadata.getIntersects().entrySet()) {
+                //
+                // Поставляющее поле
+                //
+                var found = current.getKey();
+                //
+                // Принимающее поле
+                //
+                var bound = current.getValue();
+                //
+                // Класс, которому принадлежит поле
+                //
+                var declaredClazz = bound.getDeclaringClass();
+
+                //
+                // Если класс, которому принадлежит поле не совпадает с классом биндинга, то ошибка
+                //
+                if(!declaredClazz.isAssignableFrom(boundClass)) {
+                    throw new RuntimeException("Cannot cast " + declaredClazz.getName() + " to " + boundClass.getName() + "[ " + fromClass.getName() + " (" + mapping + ")]");
+                }
+
+                result = metadata.getFieldValue(from, found);
+
+                if(result != null) {
+                    foundType = found.getType();
+                    boundType = bound.getType();
+
                     if(ConversionResponse.class.isAssignableFrom(boundType)) {
                         result = createResponse(result, getEntityMapping(boundType), applyMappingConversion);
                     }
@@ -237,20 +280,15 @@ public class ConversionProvider {
                     }
                 }
 
-                if(setters.containsKey(bound)) {
+                if (setters.containsKey(bound)) {
                     ConversionUtils.safeInvoke(setters.get(bound), instance, result);
                 } else {
-                    bound.set(instance, result);
+                    ConversionUtils.safeSet(bound, instance, result);
                 }
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException(e);
             }
-
-            found.setAccessible(foundAccess);
-            bound.setAccessible(boundAccess);
         }
 
-        instance.fillInternal(from, this, factory.getFactory().provideContext());
+        instance.fillInternal(from, this, factory.provideContext());
 
         return instance;
     }

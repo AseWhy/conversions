@@ -21,7 +21,7 @@ public class ConversionFactoryInternal {
     public ConversionFactoryInternal(iConversionFactory factory) {
         this.convertFieldName = factory::convertFieldName;
         this.objectMapper = factory.provideObjectMapper().copy();
-        this.objectMapper.setPropertyNamingStrategy(new CallbackNameStrategy(this.convertFieldName));
+        this.objectMapper.setPropertyNamingStrategy(new CallbackNameStrategy(this.convertFieldName, factory.provideExcludes()));
         this.store = factory.provideStore();
         this.factory = factory;
     }

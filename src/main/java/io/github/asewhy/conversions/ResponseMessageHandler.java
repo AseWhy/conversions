@@ -25,9 +25,9 @@ public final class ResponseMessageHandler extends RequestResponseBodyMethodProce
     }
 
     @Override
-    public boolean supportsReturnType(MethodParameter returnType) {
-        var annotation = returnType.getParameterAnnotation(ConvertResponse.class) != null;
-        var annotatedClass = returnType.getContainingClass();
+    public boolean supportsReturnType(MethodParameter parameter) {
+        var annotation = parameter.getParameterAnnotation(ConvertResponse.class) != null;
+        var annotatedClass = parameter.getContainingClass();
 
         if (!annotation) {
             annotation = annotatedClass.getAnnotation(ConvertResponse.class) != null;

@@ -1,5 +1,6 @@
 package io.github.asewhy.conversions.support;
 
+import io.github.asewhy.conversions.ConversionUtils;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
@@ -21,9 +22,13 @@ public class ClassMetadata {
     //
     private Set<Field> foundFields = new HashSet<>();
     //
+    // Все найденные поля класса целевого класса
+    //
+    private Set<Field> boundFields = new HashSet<>();
+    //
     // Все найденные поля класса
     //
-    private Map<Class<?>, Field> boundFields = new HashMap<>();
+    private Map<Class<?>, Field> boundFieldsMap = new HashMap<>();
     //
     // Сеттеры для всех найденных полей
     //
@@ -48,6 +53,38 @@ public class ClassMetadata {
      * @return найденное поле тип которого соответствует искомому
      */
     public Field getBoundField(Class<?> forClass) {
-        return boundFields.get(forClass);
+        return boundFieldsMap.get(forClass);
+    }
+
+    /**
+     * Установить класс получателя
+     *
+     * @param boundClass класс получателя
+     */
+    public void setBoundClass(Class<?> boundClass) {
+        this.boundClass = boundClass;
+    }
+
+    /**
+     * Получить значение поля для поля и класса
+     *
+     * @param from поле для получения значения
+     * @param found объект для получения значения
+     * @return полученное значение
+     */
+    public Object getFieldValue(Object from, Field found) {
+        return foundGetters.containsKey(found) ? ConversionUtils.safeInvoke(foundGetters.get(found), from) : ConversionUtils.safeAccess(found, from);
+    }
+
+    /**
+     * Добавить поле получетаеля
+     *
+     * @param field поле получателя
+     */
+    public void addBoundField(Field field) {
+        if(field != null) {
+            this.boundFields.add(field);
+            this.boundFieldsMap.put(field.getType(), field);
+        }
     }
 }

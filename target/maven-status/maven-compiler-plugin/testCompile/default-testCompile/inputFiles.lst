@@ -4,5 +4,6 @@
 /home/astecom/git/dto-conversion/src/test/java/io/github/asewhy/conversions/config/ConversationalTestFactory.java
 /home/astecom/git/dto-conversion/src/test/java/io/github/asewhy/conversions/config/entities/ExampleTestBookEntity.java
 /home/astecom/git/dto-conversion/src/test/java/io/github/asewhy/conversions/ConversionsTest.java
+/home/astecom/git/dto-conversion/src/test/java/io/github/asewhy/conversions/config/converters/ExampleTestMapResponseConverter.java
 /home/astecom/git/dto-conversion/src/test/java/io/github/asewhy/conversions/config/entities/ExampleTestPointEntity.java
 /home/astecom/git/dto-conversion/src/test/java/io/github/asewhy/conversions/config/converters/ExampleTestBookResponseConverter.java

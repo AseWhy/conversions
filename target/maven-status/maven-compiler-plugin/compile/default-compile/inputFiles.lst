@@ -16,6 +16,7 @@
 /home/astecom/git/dto-conversion/src/main/java/io/github/asewhy/conversions/MutatorArrayBuilder.java
 /home/astecom/git/dto-conversion/src/main/java/io/github/asewhy/conversions/ConversionUtils.java
 /home/astecom/git/dto-conversion/src/main/java/io/github/asewhy/conversions/ResponseMessageHandler.java
+/home/astecom/git/dto-conversion/src/main/java/io/github/asewhy/conversions/support/annotations/ConvertRequest.java
 /home/astecom/git/dto-conversion/src/main/java/io/github/asewhy/conversions/ConversionResponse.java
 /home/astecom/git/dto-conversion/src/main/java/io/github/asewhy/conversions/support/annotations/EnableConversions.java
 /home/astecom/git/dto-conversion/src/main/java/io/github/asewhy/conversions/support/annotations/ShiftController.java

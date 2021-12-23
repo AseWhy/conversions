@@ -46,10 +46,10 @@ public class ConversionUtils {
      * @return класс который нам нужен
      */
     public static <T> Class<? super T> skipAnonClasses(Class<T> clazz) {
+        //
+        // Анонимные классы не имеют названия
+        //
         if(clazz.getSimpleName().equals("")) {
-            //
-            // Анонимные классы не имеют названия
-            //
             return clazz.getSuperclass();
         }
 
@@ -96,6 +96,12 @@ public class ConversionUtils {
 
                 if(generic instanceof Class<?> clazz) {
                     return clazz;
+                } else if (generic instanceof ParameterizedType c) {
+                    var type = c.getRawType();
+
+                    if (type instanceof Class<?> clazz) {
+                        return clazz;
+                    }
                 }
             }
         }
@@ -121,6 +127,12 @@ public class ConversionUtils {
 
                 if (genericType instanceof Class<?> c) {
                     fromGeneric = c;
+                } else if (genericType instanceof ParameterizedType c) {
+                    var type = c.getRawType();
+
+                    if (type instanceof Class<?> d) {
+                        fromGeneric = d;
+                    }
                 }
             }
 
@@ -397,6 +409,24 @@ public class ConversionUtils {
         } else {
             try {
                 return (Collection) clazz.getConstructor().newInstance();
+            } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    /**
+     * Получить новый безопасный инстанс карты
+     *
+     * @param clazz класс карты
+     * @return инстанс карты
+     */
+    public static Map makeMapInstance(Class<?> clazz) {
+        if(Map.class == clazz) {
+            return new HashMap<>();
+        } else {
+            try {
+                return (Map) clazz.getConstructor().newInstance();
             } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
                 throw new RuntimeException(e);
             }

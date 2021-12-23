@@ -5,6 +5,7 @@ import io.github.asewhy.conversions.support.ClassMetadata;
 import io.github.asewhy.conversions.support.annotations.MutatorDTO;
 import io.github.asewhy.conversions.support.annotations.ResponseDTO;
 import io.github.asewhy.conversions.support.annotations.ResponseResolver;
+import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
@@ -12,12 +13,10 @@ import org.springframework.core.type.filter.AnnotationTypeFilter;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 @Log4j2
+@Getter
 @SuppressWarnings({"unused", "unchecked"})
 public class ConversionStore {
     private final Map<Class<?>, ClassMetadata> mutatorsMap = new HashMap<>();
@@ -144,13 +143,14 @@ public class ConversionStore {
         var fieldsTotal = metadata.getFoundFields();
         var fieldsSetters = metadata.getBoundSetters();
         var fieldsGetters = metadata.getFoundGetters();
-        var fieldsBound = metadata.getBoundFields();
+        var fieldsBound = metadata.getBoundFieldsMap();
         var foundFields = ConversionUtils.scanFieldsToMap(target);
         var boundFields = ConversionUtils.scanFieldsToMap(response);
         var foundMethods = ConversionUtils.scanMethodsToMap(target);
         var boundMethods = ConversionUtils.scanMethodsToMap(response);
 
         metadata.setBoundClass(response);
+        metadata.setIsMap(Map.class.isAssignableFrom(target));
 
         for(var current: foundFields.entrySet()) {
             var found = current.getValue();
@@ -172,6 +172,8 @@ public class ConversionStore {
                 }
 
                 fieldsTotal.add(found);
+            } else if(metadata.getIsMap()) {
+                fieldsTotal.add(found);
             }
         }
 
@@ -187,7 +189,7 @@ public class ConversionStore {
                 }
             }
 
-            fieldsBound.put(field.getType(), field);
+            metadata.addBoundField(field);
         }
 
         for(var current: foundFields.entrySet()) {
@@ -214,13 +216,14 @@ public class ConversionStore {
         var fieldsTotal = metadata.getFoundFields();
         var fieldsSetters = metadata.getBoundSetters();
         var fieldsGetters = metadata.getFoundGetters();
-        var fieldsBound = metadata.getBoundFields();
+        var fieldsBound = metadata.getBoundFieldsMap();
         var foundFields = ConversionUtils.scanFieldsToMap(mutator);
         var boundFields = ConversionUtils.scanFieldsToMap(target);
         var foundMethods = ConversionUtils.scanMethodsToMap(mutator);
         var boundMethods = ConversionUtils.scanMethodsToMap(target);
 
         metadata.setBoundClass(target);
+        metadata.setIsMap(Map.class.isAssignableFrom(target));
 
         for(var current: foundFields.entrySet()) {
             var found = current.getValue();
@@ -237,11 +240,12 @@ public class ConversionStore {
                     ) ||
                     isConverterOwn(found, boundType) &&
                     ConversionMutator.class.isAssignableFrom(foundType)
-
                 ) {
                     fieldsFound.put(found, bound);
                 }
 
+                fieldsTotal.add(found);
+            } else if(metadata.getIsMap()) {
                 fieldsTotal.add(found);
             }
         }
@@ -254,7 +258,7 @@ public class ConversionStore {
                 fieldsSetters.put(field, setter);
             }
 
-            fieldsBound.put(field.getType(), field);
+            metadata.addBoundField(field);
         }
 
         for(var current: foundFields.entrySet()) {

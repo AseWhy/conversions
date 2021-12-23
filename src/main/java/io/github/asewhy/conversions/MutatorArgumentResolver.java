@@ -4,12 +4,14 @@ import io.github.asewhy.conversions.support.annotations.ConvertMutator;
 import io.github.asewhy.conversions.support.annotations.ConvertRequest;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.core.MethodParameter;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.validation.Valid;
 import java.util.Map;
 import java.util.Objects;
 
@@ -44,12 +46,28 @@ public record MutatorArgumentResolver(
                     provider.createMutator(mutator, parsed);
                 }
 
-                return result;
+                return validate(result, nativeWebRequest, binderFactory, parameter);
             } else {
-                return objectMapper.treeToValue(tree, parameter.getParameterType());
+                return validate(objectMapper.treeToValue(tree, parameter.getParameterType()), nativeWebRequest, binderFactory, parameter);
             }
         }
 
-        return Objects.requireNonNull(parameter.getConstructor()).newInstance();
+        return validate(Objects.requireNonNull(parameter.getConstructor()).newInstance(), nativeWebRequest, binderFactory, parameter);
+    }
+
+    public Object validate(Object result, NativeWebRequest nativeWebRequest, WebDataBinderFactory binderFactory, MethodParameter parameter) throws Exception {
+        if(parameter.hasParameterAnnotation(Valid.class)) {
+            var binder = binderFactory.createBinder(nativeWebRequest, result, "resolvedObjectLogicalName");
+
+            binder.validate();
+
+            var bindingResult = binder.getBindingResult();
+
+            if (bindingResult.getErrorCount ()> 0) {
+                throw new MethodArgumentNotValidException(parameter, bindingResult);
+            }
+        }
+
+        return result;
     }
 }
