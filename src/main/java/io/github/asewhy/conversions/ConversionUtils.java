@@ -187,6 +187,25 @@ public class ConversionUtils {
     }
 
     /**
+     * Безопасно создать инстанс переданного класса, безопасно
+     *
+     * @param clazz класс для создания
+     * @param args аргументы конструктора
+     * @return инстанс класса
+     */
+    public static <T> T safeInstance(Class<T> clazz, Object... args) {
+        try {
+            return clazz
+                .getConstructor(Arrays.stream(args)
+                .map(e -> e != null ? e.getClass() : null)
+                .toArray(Class[]::new))
+            .newInstance(args);
+        } catch (IllegalAccessException | NoSuchMethodException | InvocationTargetException | InstantiationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
      * Безопасный доступ к полю
      *
      * @param field поле

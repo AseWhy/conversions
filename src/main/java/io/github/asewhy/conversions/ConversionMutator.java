@@ -6,9 +6,9 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -90,85 +90,85 @@ public abstract class ConversionMutator<T> {
 
             var foundType = found.getType();
             var boundType = bound.getType();
-            var foundAccess = found.canAccess(this);
-            var boundAccess = bound.canAccess(fill);
 
-            found.setAccessible(true);
-            bound.setAccessible(true);
+            //
+            // Если есть поле
+            //
+            if(hasField(found)) {
+                var received = foundGetters.containsKey(found) ? ConversionUtils.safeInvoke(foundGetters.get(found), this) : ConversionUtils.safeAccess(found, this);
 
-            try {
-                if(hasField(found)) {
-                    var received = foundGetters.containsKey(found) ? ConversionUtils.safeInvoke(foundGetters.get(found), this) : found.get(this);
-                    var exists = bound.get(fill);
+                if(received != null) {
+                    var exists = ConversionUtils.safeAccess(bound, fill);
 
-                    if(received != null) {
-                        if(received instanceof ConversionMutator mutator && requireProcessNested(mutator)) {
-                            if(exists == null) {
-                                exists = boundType.getConstructor().newInstance();
-                            }
-
-                            mutator.fill(exists);
-                            mutator.fillParent(exists, fill);
-
-                            received = exists;
+                    if(received instanceof ConversionMutator mutator && requireProcessNested(mutator)) {
+                        if(exists == null) {
+                            exists = ConversionUtils.safeInstance(boundType);
                         }
 
-                        if(received instanceof Collection<?> foundCollection && requireProcessNested(foundCollection)) {
-                            var foundSubtype = ConversionUtils.findXGeneric(found);
-                            var boundSubtype = ConversionUtils.findXGeneric(bound);
-                            var foundIdField = ConversionUtils.findTypeId(foundSubtype);
-                            var boundIdField = ConversionUtils.findTypeId(boundSubtype);
+                        mutator.fill(exists);
+                        mutator.fillParent(exists, fill);
 
-                            if(boundIdField != null && foundIdField != null && boundSubtype != null) {
-                                if(exists == null) {
-                                    //
-                                    // Создадим инстанс нужной коллекции
-                                    //
-                                    exists = ConversionUtils.makeCollectionInstance(boundType);
-                                }
-
-                                var boundCollection = (Collection<Object>) exists;
-                                var existsMap = boundCollection.stream().collect(Collectors.toMap(e -> ConversionUtils.safeAccess(boundIdField, e), e -> e));
-                                var foundMap = foundCollection.stream().collect(Collectors.toMap(e -> ConversionUtils.safeAccess(foundIdField, e), e -> e));
-
-                                boundCollection.removeIf(e -> !foundMap.containsKey(ConversionUtils.safeAccess(boundIdField, e)));
-
-                                for(var item: foundCollection) {
-                                    if(item instanceof ConversionMutator mutator) {
-                                        var mutatorId = ConversionUtils.safeAccess(foundIdField, mutator);
-                                        var existsItem = existsMap.get(mutatorId);
-
-                                        if (mutatorId == null || existsItem == null) {
-                                            //
-                                            // Создадим инстанс нужного члена коллекции
-                                            //
-                                            boundCollection.add(existsItem = boundSubtype.getConstructor().newInstance());
-                                        }
-
-                                        mutator.fill(existsItem);
-                                        mutator.fillParent(existsItem, fill);
-                                    }
-                                }
-
-                                received = boundCollection;
-                            }
-                        }
+                        received = exists;
                     }
 
-                    if(requireProcessField(found.getName(), context, fill)) {
-                        if(boundSetters.containsKey(bound)) {
-                            ConversionUtils.safeInvoke(boundSetters.get(bound), fill, received);
-                        } else {
-                            bound.set(fill, received);
+                    if(received instanceof Collection<?> foundCollection && requireProcessNested(foundCollection)) {
+                        var foundSubtype = ConversionUtils.findXGeneric(found);
+                        var boundSubtype = ConversionUtils.findXGeneric(bound);
+                        var foundIdField = ConversionUtils.findTypeId(foundSubtype);
+                        var boundIdField = ConversionUtils.findTypeId(boundSubtype);
+
+                        if(boundIdField != null && foundIdField != null && boundSubtype != null) {
+                            if(exists == null) {
+                                //
+                                // Создадим инстанс нужной коллекции
+                                //
+                                exists = ConversionUtils.makeCollectionInstance(boundType);
+                            }
+
+                            var boundCollection = (Collection<Object>) exists;
+                            var existsMap = boundCollection.stream().collect(Collectors.toMap(e -> ConversionUtils.safeAccess(boundIdField, e), e -> e));
+                            var foundMap = foundCollection.stream().collect(Collectors.toMap(e -> ConversionUtils.safeAccess(foundIdField, e), e -> e));
+
+                            boundCollection.removeIf(e -> !foundMap.containsKey(ConversionUtils.safeAccess(boundIdField, e)));
+
+                            for(var item: foundCollection) {
+                                if(item instanceof ConversionMutator mutator) {
+                                    var mutatorId = ConversionUtils.safeAccess(foundIdField, mutator);
+                                    var existsItem = existsMap.get(mutatorId);
+
+                                    if (mutatorId == null || existsItem == null) {
+                                        //
+                                        // Создадим инстанс нужного члена коллекции
+                                        //
+                                        if(Map.class.isAssignableFrom(boundSubtype)) {
+                                            boundCollection.add(existsItem = ConversionUtils.makeMapInstance(boundSubtype));
+                                        } else if(Collection.class.isAssignableFrom(boundSubtype)) {
+                                            boundCollection.add(existsItem = ConversionUtils.makeCollectionInstance(boundSubtype));
+                                        } else {
+                                            boundCollection.add(existsItem = ConversionUtils.safeInstance(boundSubtype));
+                                        }
+                                    }
+
+                                    mutator.fill(existsItem);
+                                    mutator.fillParent(existsItem, fill);
+                                }
+                            }
+
+                            received = boundCollection;
                         }
                     }
                 }
-            } catch (IllegalAccessException | InvocationTargetException | InstantiationException | NoSuchMethodException e) {
-                throw new RuntimeException(e);
-            }
 
-            found.setAccessible(foundAccess);
-            bound.setAccessible(boundAccess);
+                if(requireProcessField(found.getName(), context, fill)) {
+                    if(fill instanceof Map map) {
+                        map.put(found.getName(), received);
+                    } else if(boundSetters.containsKey(bound)) {
+                        ConversionUtils.safeInvoke(boundSetters.get(bound), fill, received);
+                    } else {
+                        ConversionUtils.safeSet(bound, fill, received);
+                    }
+                }
+            }
         }
 
         fillInternal(fill, context);
