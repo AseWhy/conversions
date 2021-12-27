@@ -2,6 +2,7 @@ package io.github.asewhy.conversions;
 
 import io.github.asewhy.conversions.support.CaseUtil;
 import io.github.asewhy.conversions.support.ClassMetadata;
+import io.github.asewhy.conversions.support.annotations.IgnoreParentMatch;
 import io.github.asewhy.conversions.support.annotations.MutatorDTO;
 import io.github.asewhy.conversions.support.annotations.ResponseDTO;
 import io.github.asewhy.conversions.support.annotations.ResponseResolver;
@@ -13,7 +14,10 @@ import org.springframework.core.type.filter.AnnotationTypeFilter;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 
 @Log4j2
 @Getter
@@ -161,8 +165,7 @@ public class ConversionStore {
                 var boundType = bound.getType();
 
                 if(
-                    boundType == foundType &&
-                    (
+                    boundType == foundType && (
                         !Collection.class.isAssignableFrom(foundType) || isConventionalCollection(found, bound)
                     ) ||
                     isConverterOwn(found, boundType) &&
@@ -172,7 +175,7 @@ public class ConversionStore {
                 }
 
                 fieldsTotal.add(found);
-            } else if(metadata.getIsMap()) {
+            } else if(metadata.getIsMap() || found.getAnnotation(IgnoreParentMatch.class) != null) {
                 fieldsTotal.add(found);
             }
         }
@@ -234,8 +237,7 @@ public class ConversionStore {
                 var boundType = bound.getType();
 
                 if(
-                    boundType == foundType &&
-                    (
+                    boundType == foundType && (
                         !Collection.class.isAssignableFrom(foundType) || isConventionalCollection(bound, found)
                     ) ||
                     isConverterOwn(found, boundType) &&
@@ -245,7 +247,7 @@ public class ConversionStore {
                 }
 
                 fieldsTotal.add(found);
-            } else if(metadata.getIsMap()) {
+            } else if(metadata.getIsMap() || found.getAnnotation(IgnoreParentMatch.class) != null) {
                 fieldsTotal.add(found);
             }
         }
