@@ -9,6 +9,10 @@ import org.springframework.stereotype.Service;
 
 import java.util.function.Function;
 
+/**
+ * Другими словами это кеш для фабрики конвертера
+ */
+
 @Getter
 @Service
 public class ConversionFactoryInternal {

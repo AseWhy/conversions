@@ -20,8 +20,8 @@ io/github/asewhy/conversions/support/ConversionSpringAutoconfigure.class
 io/github/asewhy/conversions/ConversionStore.class
 io/github/asewhy/conversions/support/CaseUtil.class
 io/github/asewhy/conversions/support/annotations/ResponseResolver.class
-io/github/asewhy/conversions/support/annotations/IgnoreParentMatch.class
 io/github/asewhy/conversions/support/annotations/Identifier.class
 io/github/asewhy/conversions/support/iConversionFactory.class
 io/github/asewhy/conversions/ConversionResolver.class
+io/github/asewhy/conversions/support/annotations/IgnoreMatch.class
 io/github/asewhy/conversions/ConversionUtils.class

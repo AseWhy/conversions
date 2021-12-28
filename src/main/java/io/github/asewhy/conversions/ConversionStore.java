@@ -2,7 +2,7 @@ package io.github.asewhy.conversions;
 
 import io.github.asewhy.conversions.support.CaseUtil;
 import io.github.asewhy.conversions.support.ClassMetadata;
-import io.github.asewhy.conversions.support.annotations.IgnoreParentMatch;
+import io.github.asewhy.conversions.support.annotations.IgnoreMatch;
 import io.github.asewhy.conversions.support.annotations.MutatorDTO;
 import io.github.asewhy.conversions.support.annotations.ResponseDTO;
 import io.github.asewhy.conversions.support.annotations.ResponseResolver;
@@ -175,7 +175,7 @@ public class ConversionStore {
                 }
 
                 fieldsTotal.add(found);
-            } else if(metadata.getIsMap() || found.getAnnotation(IgnoreParentMatch.class) != null) {
+            } else if(metadata.getIsMap() || found.getAnnotation(IgnoreMatch.class) != null) {
                 fieldsTotal.add(found);
             }
         }
@@ -247,7 +247,7 @@ public class ConversionStore {
                 }
 
                 fieldsTotal.add(found);
-            } else if(metadata.getIsMap() || found.getAnnotation(IgnoreParentMatch.class) != null) {
+            } else if(metadata.getIsMap() || found.getAnnotation(IgnoreMatch.class) != null) {
                 fieldsTotal.add(found);
             }
         }

@@ -10,6 +10,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
+/**
+ * Поставщик конверсии, предоставляет базовые методы для создания сущностей
+ * ответа путем преобразования сущностей в их конвертируемые эквиваленты.
+ */
 @Getter
 @Service
 @SuppressWarnings({"unchecked", "unused"})

@@ -6,7 +6,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Помечает класс как обработчик маппингов для сущностей ответа
+ * Помечает класс как обработчик {@link io.github.asewhy.conversions.ConversionResolver} маппингов для сущностей ответа
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
