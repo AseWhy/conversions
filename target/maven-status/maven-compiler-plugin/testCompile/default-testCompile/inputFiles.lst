@@ -1,9 +1,13 @@
 /home/astecom/git/dto-conversion/src/test/java/io/github/asewhy/conversions/config/entities/ExampleTestAuthorEntity.java
+/home/astecom/git/dto-conversion/src/test/java/io/github/asewhy/conversions/config/classMap/C.java
+/home/astecom/git/dto-conversion/src/test/java/io/github/asewhy/conversions/config/classMap/A.java
+/home/astecom/git/dto-conversion/src/test/java/io/github/asewhy/conversions/config/entities/ExampleTestBookEntity.java
+/home/astecom/git/dto-conversion/src/test/java/io/github/asewhy/conversions/config/classMap/D.java
+/home/astecom/git/dto-conversion/src/test/java/io/github/asewhy/conversions/config/converters/ExampleTestMapResponseConverter.java
 /home/astecom/git/dto-conversion/src/test/java/io/github/asewhy/conversions/config/converters/ExampleTestPointResponseConverter.java
 /home/astecom/git/dto-conversion/src/test/java/io/github/asewhy/conversions/config/converters/ExampleTestAuthorResponseConverter.java
+/home/astecom/git/dto-conversion/src/test/java/io/github/asewhy/conversions/config/classMap/B.java
 /home/astecom/git/dto-conversion/src/test/java/io/github/asewhy/conversions/config/ConversationalTestFactory.java
-/home/astecom/git/dto-conversion/src/test/java/io/github/asewhy/conversions/config/entities/ExampleTestBookEntity.java
 /home/astecom/git/dto-conversion/src/test/java/io/github/asewhy/conversions/ConversionsTest.java
-/home/astecom/git/dto-conversion/src/test/java/io/github/asewhy/conversions/config/converters/ExampleTestMapResponseConverter.java
 /home/astecom/git/dto-conversion/src/test/java/io/github/asewhy/conversions/config/entities/ExampleTestPointEntity.java
 /home/astecom/git/dto-conversion/src/test/java/io/github/asewhy/conversions/config/converters/ExampleTestBookResponseConverter.java

@@ -5,13 +5,18 @@ import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.*;
 import java.util.*;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @SuppressWarnings("rawtypes")
 public class ConversionUtils {
     public final static String COMMON_MAPPING = "common";
+    private final static Pattern PROXY_NAME_PATTERN = Pattern.compile("\\$(.+)Proxy\\$(.*)$", Pattern.MULTILINE);
 
     /**
-     * Быстрый поиск по карте, ключом в которой является класс, метод учитывает наследование классов
+     * Быстрый поиск по карте, ключом в которой является класс, метод учитывает наследование классов. Если
+     * искомого класса нет, то метод выдаст наиболее близкого наследника этого класса в карте
      *
      * @param input входящая карта с классами
      * @param key ключ для поиска
@@ -23,19 +28,48 @@ public class ConversionUtils {
             return input.get(key);
         }
 
+        var found = new HashSet<Class<?>>();
+
         for (var current: input.entrySet()) {
             var parent = current.getKey();
 
             if(parent.isAssignableFrom(key)) {
-                input.put(key, current.getValue());
-
-                return current.getValue();
+                found.add(current.getKey());
             }
+        }
+
+        if(found.size() > 0) {
+            var resultValue = input.get(found.stream().min((a, b) -> getParentDistance(a, key) > getParentDistance(b, key) ? 1 : 0).orElse(null));
+            input.put(key, resultValue);
+            return resultValue;
         }
 
         input.put(key, null);
 
         return null;
+    }
+
+    /**
+     * Получить дистанцию наследования до родительского класса
+     *
+     * @param child дочерний класс
+     * @param parent родительский класс, до которого измеряется расстояние
+     * @return дистанция от 0
+     */
+    private static Integer getParentDistance(Class<?> child, Class<?> parent) {
+        var distance = 0;
+        var current = parent;
+
+        while(current != null) {
+            if(current == child) {
+                break;
+            }
+
+            current = current.getSuperclass();
+            distance++;
+        }
+
+        return distance;
     }
 
     /**
@@ -47,13 +81,32 @@ public class ConversionUtils {
      */
     public static <T> Class<? super T> skipAnonClasses(Class<T> clazz) {
         //
-        // Анонимные классы не имеют названия
+        // У анонимного или прокси класса есть супер класс с нужным нам типом.
         //
-        if(clazz.getSimpleName().equals("")) {
+        if(isProxyOrProtectedClass(clazz)) {
             return clazz.getSuperclass();
         }
 
+        //
+        // Если нет, то возвращаем текущий класс
+        //
         return clazz;
+    }
+
+    /**
+     * Проверяет, является ли класс clazz прокси классом или приватным классом
+     *
+     * @param clazz класс для проверки
+     * @return true если является
+     */
+    public static Boolean isProxyOrProtectedClass(Class<?> clazz) {
+        var name = clazz.getName();
+
+        if (PROXY_NAME_PATTERN.matcher(name).find()) {
+            return true;
+        }
+
+        return clazz.getSimpleName().equals("") || Proxy.isProxyClass(clazz);
     }
 
     /**
@@ -161,9 +214,31 @@ public class ConversionUtils {
             method.setAccessible(access);
 
             return found;
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("Argument type mismatch exception on " + paramsToString(objectsToClass(args)) + " and " + paramsToString(method.getParameterTypes()));
         } catch (IllegalAccessException | InvocationTargetException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * Преобразовать список объектов в список классов этих объектов
+     *
+     * @param args список объектов
+     * @return строка со строковыми значениями
+     */
+    public static Class<?>[] objectsToClass(Object[] args) {
+        return Arrays.stream(args).map(e -> e != null ? e.getClass() : null).toArray(Class<?>[]::new);
+    }
+
+    /**
+     * Преобразовать параметры в строку
+     *
+     * @param args список параметров
+     * @return строка со строковыми значениями
+     */
+    public static String paramsToString(Object[] args) {
+        return Stream.of(args).map(String::valueOf).collect(Collectors.joining(", "));
     }
 
     /**

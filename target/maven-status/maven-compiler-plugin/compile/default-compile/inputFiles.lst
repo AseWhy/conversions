@@ -3,6 +3,7 @@
 /home/astecom/git/dto-conversion/src/main/java/io/github/asewhy/conversions/support/annotations/ResponseDTO.java
 /home/astecom/git/dto-conversion/src/main/java/io/github/asewhy/conversions/ConversionMutator.java
 /home/astecom/git/dto-conversion/src/main/java/io/github/asewhy/conversions/ConversionProvider.java
+/home/astecom/git/dto-conversion/src/main/java/io/github/asewhy/conversions/support/annotations/IgnoreMatch.java
 /home/astecom/git/dto-conversion/src/main/java/io/github/asewhy/conversions/ConversionStore.java
 /home/astecom/git/dto-conversion/src/main/java/io/github/asewhy/conversions/support/annotations/ResponseResolver.java
 /home/astecom/git/dto-conversion/src/main/java/io/github/asewhy/conversions/support/CaseUtil.java

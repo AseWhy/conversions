@@ -1,6 +1,10 @@
 package io.github.asewhy.conversions;
 
 import io.github.asewhy.conversions.config.ConversationalTestFactory;
+import io.github.asewhy.conversions.config.classMap.A;
+import io.github.asewhy.conversions.config.classMap.B;
+import io.github.asewhy.conversions.config.classMap.C;
+import io.github.asewhy.conversions.config.classMap.D;
 import io.github.asewhy.conversions.config.converters.ExampleTestBookResponseConverter;
 import io.github.asewhy.conversions.config.entities.ExampleTestAuthorEntity;
 import io.github.asewhy.conversions.config.entities.ExampleTestBookEntity;
@@ -22,6 +26,16 @@ import java.util.stream.Stream;
 public class ConversionsTest {
     @Autowired
     protected ConversionProvider provider;
+
+    @Test
+    public void testConversionUtils() {
+        var map = new HashMap<Class<?>, Integer>();
+        map.put(C.class, 2);
+        map.put(A.class, 0);
+        map.put(B.class, 1);
+        var result = ConversionUtils.findOnClassMap(map, D.class);
+        Assertions.assertThat(result).isEqualTo(2);
+    }
 
     @Test
     public void conversionMapResponse() {

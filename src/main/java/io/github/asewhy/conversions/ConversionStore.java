@@ -199,12 +199,12 @@ public class ConversionStore {
             var field = current.getValue();
             var getter = foundMethods.get("get" + CaseUtil.toPascalCase(current.getKey()));
 
-            if(getter != null && getter.getReturnType() == field.getType()) {
+            if(getter != null && getter.getReturnType().isAssignableFrom(field.getType())) {
                 fieldsGetters.put(field, getter);
             }
         }
 
-        responseMap.putIfAbsent(target, metadataMap);
+        responseMap.put(target, metadataMap);
     }
 
     /**
@@ -267,7 +267,7 @@ public class ConversionStore {
             var field = current.getValue();
             var getter = foundMethods.get("get" + CaseUtil.toPascalCase(current.getKey()));
 
-            if(getter != null && getter.getReturnType() == field.getType()) {
+            if(getter != null && getter.getReturnType().isAssignableFrom(field.getType())) {
                 fieldsGetters.put(field, getter);
             }
         }
@@ -312,7 +312,13 @@ public class ConversionStore {
      * @return true если истина
      */
     protected boolean isConverterOwn(Field found, Class<?> boundClazz) {
-        return ConversionUtils.findXGeneric(boundClazz) == found.getType();
+        var generic = ConversionUtils.findXGeneric(boundClazz);
+
+        if(generic != null) {
+            return generic.isAssignableFrom(found.getType());
+        } else {
+            return false;
+        }
     }
 
     /**
