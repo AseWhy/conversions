@@ -5,6 +5,7 @@ import io.github.asewhy.conversions.ConversionStore;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 public interface iConversionFactory {
     String ANY = "$any";
@@ -38,7 +39,7 @@ public interface iConversionFactory {
      *
      * @return набор с классами полей, названия которых нужно резрешать с помощью стандартного механизма
      */
-    default Map<Class<?>, String> provideExcludes() {
+    default Map<Class<?>, Set<String>> provideExcludes() {
         return new HashMap<>();
     }
 

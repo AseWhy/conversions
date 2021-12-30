@@ -7,14 +7,14 @@ import com.fasterxml.jackson.databind.introspect.AnnotatedMethod;
 import com.fasterxml.jackson.databind.introspect.AnnotatedParameter;
 
 import java.util.Map;
-import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 
 public class CallbackNameStrategy extends PropertyNamingStrategy {
     private final Function<String, String> callback;
-    private final Map<Class<?>, String> excludes;
+    private final Map<Class<?>, Set<String>> excludes;
 
-    public CallbackNameStrategy(Function<String, String> callback, Map<Class<?>, String> excludes) {
+    public CallbackNameStrategy(Function<String, String> callback, Map<Class<?>, Set<String>> excludes) {
         this.callback = callback;
         this.excludes = excludes;
     }
@@ -42,7 +42,7 @@ public class CallbackNameStrategy extends PropertyNamingStrategy {
     public String convert(String defaultName, Class<?> rawReturnType) {
         var found = excludes.get(rawReturnType);
 
-        if((excludes.containsKey(rawReturnType) && Objects.equals(found, "$any")) || found != null && Objects.equals(found, defaultName)) {
+        if(found != null && (found.contains(defaultName) || found.contains(iConversionFactory.ANY))) {
             return defaultName;
         }
 

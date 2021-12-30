@@ -25,7 +25,7 @@ public final class ResponseMessageHandler extends RequestResponseBodyMethodProce
     }
 
     @Override
-    public boolean supportsReturnType(MethodParameter parameter) {
+    public boolean supportsReturnType(@NotNull MethodParameter parameter) {
         var annotation = parameter.getParameterAnnotation(ConvertResponse.class) != null;
         var annotatedClass = parameter.getContainingClass();
 
@@ -45,7 +45,7 @@ public final class ResponseMessageHandler extends RequestResponseBodyMethodProce
         Object returnValue,
         @NotNull MethodParameter returnType,
         @NotNull ModelAndViewContainer mavContainer,
-        NativeWebRequest webRequest
+        @NotNull NativeWebRequest webRequest
     ) throws HttpMediaTypeNotAcceptableException, IOException {
         var httpServletRequest = webRequest.getNativeResponse(HttpServletResponse.class);
 
@@ -73,7 +73,7 @@ public final class ResponseMessageHandler extends RequestResponseBodyMethodProce
      * @param parameter конвертируемый параметр
      * @return маппинг
      */
-    private String getMappingName(MethodParameter parameter) {
+    private String getMappingName(@NotNull MethodParameter parameter) {
         var annotation = parameter.getParameterAnnotation(ConvertResponse.class);
         var annotatedClass = parameter.getContainingClass();
 
@@ -102,7 +102,7 @@ public final class ResponseMessageHandler extends RequestResponseBodyMethodProce
      * @param parameter параметр для обработки
      * @return true если этот обработчик может обработать этот тип
      */
-    private Boolean canProcess(MethodParameter parameter) {
+    private @NotNull Boolean canProcess(@NotNull MethodParameter parameter) {
         var result = parameter.getParameterType();
 
         if(Collection.class.isAssignableFrom(result)) {

@@ -2,6 +2,7 @@ package io.github.asewhy.conversions;
 
 import io.github.asewhy.conversions.support.annotations.ConvertMutator;
 import io.github.asewhy.conversions.support.annotations.ConvertRequest;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.core.MethodParameter;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -55,7 +56,8 @@ public record MutatorArgumentResolver(
         return validate(Objects.requireNonNull(parameter.getConstructor()).newInstance(), nativeWebRequest, binderFactory, parameter);
     }
 
-    public Object validate(Object result, NativeWebRequest nativeWebRequest, WebDataBinderFactory binderFactory, MethodParameter parameter) throws Exception {
+    @Contract("_, _, _, _ -> param1")
+    public Object validate(Object result, NativeWebRequest nativeWebRequest, WebDataBinderFactory binderFactory, @NotNull MethodParameter parameter) throws Exception {
         if(parameter.hasParameterAnnotation(Valid.class)) {
             var binder = binderFactory.createBinder(nativeWebRequest, result, "resolvedObjectLogicalName");
 

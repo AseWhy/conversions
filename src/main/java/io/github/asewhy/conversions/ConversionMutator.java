@@ -1,5 +1,6 @@
 package io.github.asewhy.conversions;
 
+import io.github.asewhy.conversions.exceptions.StoreNotFoundException;
 import io.github.asewhy.conversions.support.iConversionFactory;
 import lombok.extern.log4j.Log4j2;
 import org.jetbrains.annotations.Contract;
@@ -63,7 +64,7 @@ public abstract class ConversionMutator<T> {
      */
     public final T fill(T fill) {
         if(store == null) {
-            throw new RuntimeException("Store not be provided on this ConversionMutator, use @ConvertMutator annotation for fill it automatically. " + fill.getClass());
+            throw new StoreNotFoundException(fill);
         }
 
         //
@@ -120,7 +121,7 @@ public abstract class ConversionMutator<T> {
                         if(boundIdField != null && foundIdField != null && boundSubtype != null) {
                             if(exists == null) {
                                 //
-                                // Создадим инстанс нужной коллекции
+                                // Создадим экземпляр нужной коллекции
                                 //
                                 exists = ConversionUtils.makeCollectionInstance(boundType);
                             }
@@ -138,7 +139,7 @@ public abstract class ConversionMutator<T> {
 
                                     if (mutatorId == null || existsItem == null) {
                                         //
-                                        // Создадим инстанс нужного члена коллекции
+                                        // Создадим экземпляр нужного члена коллекции
                                         //
                                         if(Map.class.isAssignableFrom(boundSubtype)) {
                                             boundCollection.add(existsItem = ConversionUtils.makeMapInstance(boundSubtype));

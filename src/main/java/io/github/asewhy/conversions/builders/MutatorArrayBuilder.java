@@ -1,9 +1,12 @@
-package io.github.asewhy.conversions;
+package io.github.asewhy.conversions.builders;
 
+import io.github.asewhy.conversions.ConversionMutator;
+import io.github.asewhy.conversions.ConversionProvider;
 import io.github.asewhy.conversions.support.iBuildable;
 
 import java.util.ArrayList;
 
+@SuppressWarnings("unused")
 public class MutatorArrayBuilder<P extends iBuildable> extends ArrayList<Object> implements iBuildable {
     private final ConversionProvider factory;
     private final P root;

@@ -94,7 +94,7 @@ public class ConversionStore {
                     register(clazz, generic);
                 }
             } catch (ClassNotFoundException e) {
-                // Do not nothing
+                log.error("Cannot create conversion for " + current.getBeanClassName());
             }
         }
     }
@@ -123,7 +123,7 @@ public class ConversionStore {
      * @param reg регистрируемый обработчик
      * @param target цель обработчика, сущности ответа какого типа он будет обрабатывать
      */
-    private void registerResolver(Class<?> reg, Class<?> target) {
+    private void registerResolver(@NotNull Class<?> reg, Class<?> target) {
         try {
             this.resolversMap.put(target, (ConversionResolver<?>) reg.getConstructor().newInstance());
         } catch (NoSuchMethodException e) {

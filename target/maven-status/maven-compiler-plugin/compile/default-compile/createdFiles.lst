@@ -4,14 +4,14 @@ io/github/asewhy/conversions/support/annotations/ConvertMutator.class
 io/github/asewhy/conversions/support/annotations/EnableConversions.class
 io/github/asewhy/conversions/ConversionFactoryInternal.class
 io/github/asewhy/conversions/ResponseMessageHandler.class
-io/github/asewhy/conversions/MutatorArrayBuilder.class
 io/github/asewhy/conversions/support/ClassMetadata.class
 io/github/asewhy/conversions/ConversionProvider.class
 io/github/asewhy/conversions/support/annotations/MutatorDTO.class
 io/github/asewhy/conversions/support/iBuildable.class
 io/github/asewhy/conversions/MutatorArgumentResolver.class
+io/github/asewhy/conversions/builders/MutatorArrayBuilder.class
+io/github/asewhy/conversions/exceptions/StoreNotFoundException.class
 io/github/asewhy/conversions/support/annotations/ConvertRequest.class
-io/github/asewhy/conversions/MutatorObjectBuilder.class
 io/github/asewhy/conversions/support/annotations/ShiftController.class
 io/github/asewhy/conversions/support/annotations/ConvertResponse.class
 io/github/asewhy/conversions/ConversionResponse.class
@@ -22,6 +22,7 @@ io/github/asewhy/conversions/support/CaseUtil.class
 io/github/asewhy/conversions/support/annotations/ResponseResolver.class
 io/github/asewhy/conversions/support/annotations/Identifier.class
 io/github/asewhy/conversions/support/iConversionFactory.class
+io/github/asewhy/conversions/builders/MutatorObjectBuilder.class
 io/github/asewhy/conversions/ConversionResolver.class
 io/github/asewhy/conversions/support/annotations/IgnoreMatch.class
 io/github/asewhy/conversions/ConversionUtils.class

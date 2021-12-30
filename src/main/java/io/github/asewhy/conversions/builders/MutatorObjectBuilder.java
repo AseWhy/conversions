@@ -1,5 +1,7 @@
-package io.github.asewhy.conversions;
+package io.github.asewhy.conversions.builders;
 
+import io.github.asewhy.conversions.ConversionMutator;
+import io.github.asewhy.conversions.ConversionProvider;
 import io.github.asewhy.conversions.support.iBuildable;
 
 import java.util.HashMap;

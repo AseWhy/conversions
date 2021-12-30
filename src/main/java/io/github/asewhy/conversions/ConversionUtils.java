@@ -2,6 +2,7 @@ package io.github.asewhy.conversions;
 
 import io.github.asewhy.conversions.support.annotations.Identifier;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.*;
 import java.util.*;
@@ -23,7 +24,7 @@ public class ConversionUtils {
      * @param <T> тип значений карты
      * @return значение или null если не нашел (так-же будет кеширован null на текущий ключ)
      */
-    public static <T> T findOnClassMap(Map<Class<?>, T> input, Class<?> key) {
+    public static <T> @Nullable T findOnClassMap(@NotNull Map<Class<?>, T> input, Class<?> key) {
         if(input.containsKey(key)) {
             return input.get(key);
         }
@@ -99,7 +100,7 @@ public class ConversionUtils {
      * @param clazz класс для проверки
      * @return true если является
      */
-    public static Boolean isProxyOrProtectedClass(Class<?> clazz) {
+    public static @NotNull Boolean isProxyOrProtectedClass(@NotNull Class<?> clazz) {
         var name = clazz.getName();
 
         if (PROXY_NAME_PATTERN.matcher(name).find()) {
@@ -138,7 +139,7 @@ public class ConversionUtils {
      * @param from поле, generic значение которого нужно получить
      * @return generic тип или nell
      */
-    public static Class<?> findXGeneric(Field from) {
+    public static @Nullable Class<?> findXGeneric(@NotNull Field from) {
         var genericsParams = from.getGenericType();
 
         if(genericsParams instanceof ParameterizedType pt) {
@@ -168,7 +169,7 @@ public class ConversionUtils {
      * @param from класс из супер класса, которого нужно получить generic
      * @return generic тип или null
      */
-    public static Class<?> findXGeneric(Class<?> from) {
+    public static @Nullable Class<?> findXGeneric(@NotNull Class<?> from) {
         var superClass = from.getGenericSuperclass();
 
         if(superClass instanceof ParameterizedType parameterizedClass) {
@@ -199,11 +200,11 @@ public class ConversionUtils {
      * Безопасный вызов метода
      *
      * @param method метод
-     * @param caller инстанс класса метод которого вызываем
+     * @param caller экземпляр класса метод которого вызываем
      * @param args аргументы для вызова
      * @return полученное значение
      */
-    public static Object safeInvoke(Method method, Object caller, Object ...args) {
+    public static Object safeInvoke(@NotNull Method method, Object caller, Object ...args) {
         try {
             var access = method.canAccess(caller);
 
@@ -227,7 +228,7 @@ public class ConversionUtils {
      * @param args список объектов
      * @return строка со строковыми значениями
      */
-    public static Class<?>[] objectsToClass(Object[] args) {
+    public static Class<?> @NotNull[] objectsToClass(Object[] args) {
         return Arrays.stream(args).map(e -> e != null ? e.getClass() : null).toArray(Class<?>[]::new);
     }
 
@@ -245,9 +246,9 @@ public class ConversionUtils {
      * Безопасно устанавливает значение полю
      *
      * @param field поле
-     * @param caller инстанс класса поле которого изменяем
+     * @param caller экземпляр класса поле которого изменяем
      */
-    public static void safeSet(Field field, Object caller, Object set) {
+    public static void safeSet(@NotNull Field field, Object caller, Object set) {
         try {
             var access = field.canAccess(caller);
 
@@ -262,13 +263,13 @@ public class ConversionUtils {
     }
 
     /**
-     * Безопасно создать инстанс переданного класса, безопасно
+     * Безопасно создать экземпляр переданного класса, безопасно
      *
      * @param clazz класс для создания
      * @param args аргументы конструктора
-     * @return инстанс класса
+     * @return экземпляр класса
      */
-    public static <T> T safeInstance(Class<T> clazz, Object... args) {
+    public static <T> @NotNull T safeInstance(@NotNull Class<T> clazz, Object... args) {
         try {
             return clazz
                 .getConstructor(Arrays.stream(args)
@@ -284,10 +285,10 @@ public class ConversionUtils {
      * Безопасный доступ к полю
      *
      * @param field поле
-     * @param caller инстанс класса поле которого получаем
+     * @param caller экземпляр класса поле которого получаем
      * @return полученное значение
      */
-    public static Object safeAccess(Field field, Object caller) {
+    public static Object safeAccess(@NotNull Field field, Object caller) {
         try {
             var access = field.canAccess(caller);
 
@@ -310,7 +311,7 @@ public class ConversionUtils {
      * @param explode исключения в дереве
      * @return поля и методы класса и супер класса
      */
-    public static List<AccessibleObject> scan(Class<?> clazz, @NotNull Set<Class<?>> explode) {
+    public static @NotNull List<AccessibleObject> scan(Class<?> clazz, @NotNull Set<Class<?>> explode) {
         var fields = new ArrayList<AccessibleObject>();
 
         while(clazz != null) {
@@ -340,7 +341,7 @@ public class ConversionUtils {
      * @param explode исключения в дереве
      * @return методы класса и супер класса
      */
-    public static List<Method> scanMethods(Class<?> clazz, @NotNull Set<Class<?>> explode) {
+    public static @NotNull List<Method> scanMethods(Class<?> clazz, @NotNull Set<Class<?>> explode) {
         var fields = new ArrayList<Method>();
 
         while(clazz != null) {
@@ -369,7 +370,7 @@ public class ConversionUtils {
      * @param explode исключения в дереве
      * @return поля класса и супер класса
      */
-    public static List<Field> scanFields(Class<?> clazz, @NotNull Set<Class<?>> explode) {
+    public static @NotNull List<Field> scanFields(Class<?> clazz, @NotNull Set<Class<?>> explode) {
         var fields = new ArrayList<Field>();
 
         while(clazz != null) {
@@ -399,7 +400,7 @@ public class ConversionUtils {
      * @param explode исключения в дереве
      * @return поля и методы класса и супер класса
      */
-    public static Map<String, AccessibleObject> scanToMap(Class<?> clazz, @NotNull Set<Class<?>> explode) {
+    public static @NotNull Map<String, AccessibleObject> scanToMap(Class<?> clazz, @NotNull Set<Class<?>> explode) {
         var fields = new HashMap<String, AccessibleObject>();
 
         while(clazz != null) {
@@ -434,7 +435,7 @@ public class ConversionUtils {
      * @param explode исключения в дереве
      * @return методы класса и супер класса
      */
-    public static Map<String, Method> scanMethodsToMap(Class<?> clazz, @NotNull Set<Class<?>> explode) {
+    public static @NotNull Map<String, Method> scanMethodsToMap(Class<?> clazz, @NotNull Set<Class<?>> explode) {
         var fields = new HashMap<String, Method>();
 
         while(clazz != null) {
@@ -465,7 +466,7 @@ public class ConversionUtils {
      * @param explode исключения в дереве
      * @return поля класса и супер класса
      */
-    public static Map<String, Field> scanFieldsToMap(Class<?> clazz, @NotNull Set<Class<?>> explode) {
+    public static @NotNull Map<String, Field> scanFieldsToMap(Class<?> clazz, @NotNull Set<Class<?>> explode) {
         var fields = new HashMap<String, Field>();
 
         while(clazz != null) {
@@ -490,12 +491,12 @@ public class ConversionUtils {
     }
 
     /**
-     * Получить новый безопасный инстанс коллекции
+     * Получить новый безопасный экземпляр коллекции
      *
      * @param clazz класс коллекции
-     * @return инстанс коллекции
+     * @return экземпляр коллекции
      */
-    public static Collection makeCollectionInstance(Class<?> clazz) {
+    public static @NotNull Collection makeCollectionInstance(Class<?> clazz) {
         if(Set.class == clazz) {
             return new HashSet();
         } else if(List.class == clazz) {
@@ -510,12 +511,12 @@ public class ConversionUtils {
     }
 
     /**
-     * Получить новый безопасный инстанс карты
+     * Получить новый безопасный экземпляр карты
      *
      * @param clazz класс карты
-     * @return инстанс карты
+     * @return экземпляр карты
      */
-    public static Map makeMapInstance(Class<?> clazz) {
+    public static @NotNull Map makeMapInstance(Class<?> clazz) {
         if(Map.class == clazz) {
             return new HashMap<>();
         } else {
@@ -527,27 +528,27 @@ public class ConversionUtils {
         }
     }
 
-    public static Map<String, Method> scanMethodsToMap(Class<?> clazz) {
+    public static @NotNull Map<String, Method> scanMethodsToMap(Class<?> clazz) {
         return scanMethodsToMap(clazz, Set.of());
     }
 
-    public static Map<String, Field> scanFieldsToMap(Class<?> clazz) {
+    public static @NotNull Map<String, Field> scanFieldsToMap(Class<?> clazz) {
         return scanFieldsToMap(clazz, Set.of());
     }
 
-    public static Map<String, AccessibleObject> scanToMap(Class<?> clazz) {
+    public static @NotNull Map<String, AccessibleObject> scanToMap(Class<?> clazz) {
         return scanToMap(clazz, Set.of());
     }
 
-    public static List<Method> scanMethods(Class<?> clazz) {
+    public static @NotNull List<Method> scanMethods(Class<?> clazz) {
         return scanMethods(clazz, Set.of());
     }
 
-    public static List<Field> scanFields(Class<?> clazz) {
+    public static @NotNull List<Field> scanFields(Class<?> clazz) {
         return scanFields(clazz, Set.of());
     }
 
-    public static List<AccessibleObject> scan(Class<?> clazz) {
+    public static @NotNull List<AccessibleObject> scan(Class<?> clazz) {
         return scan(clazz, Set.of());
     }
 }

@@ -25,6 +25,6 @@ public class ConversionSpringAutoconfigure implements WebMvcConfigurer {
 
     @Override
     public void addReturnValueHandlers(@NotNull List<HandlerMethodReturnValueHandler> handlers) {
-        handlers.add(0, new ResponseMessageHandler(List.of(new MappingJackson2HttpMessageConverter(provider.getFactory().getObjectMapper())), provider));
+        handlers.add(new ResponseMessageHandler(List.of(new MappingJackson2HttpMessageConverter(provider.getFactory().getObjectMapper())), provider));
     }
 }
