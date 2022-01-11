@@ -48,6 +48,7 @@ public class ConversionProvider {
         var factory = this.factory.getFactory();
         var store = this.factory.getStore();
         var metadata = store.getMutatorBound(clazz);
+
         var founds = metadata.getFoundFields();
 
         for (var current : founds) {
@@ -56,6 +57,12 @@ public class ConversionProvider {
             if (mirror.containsKey(jsonName)) {
                 var mirrorValue = mirror.get(jsonName);
                 var found = ConversionUtils.safeAccess(current, from);
+
+                from.touchedFields.add(jsonName);
+
+                if(metadata.getIsMap()) {
+                    continue;
+                }
 
                 if (
                     found instanceof ConversionMutator<?> foundMutator &&
@@ -85,10 +92,6 @@ public class ConversionProvider {
                         }
                     }
                 }
-
-                from.touchedFields.add(jsonName);
-            } else if(metadata.getIsMap()) {
-                from.touchedFields.add(jsonName);
             }
         }
     }

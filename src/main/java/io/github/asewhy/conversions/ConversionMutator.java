@@ -189,8 +189,12 @@ public abstract class ConversionMutator<T> {
         return hasField(field.getName());
     }
 
+    public final String convertFieldName(String name) {
+        return factory.convertFieldName(name);
+    }
+
     public final boolean hasField(String name) {
-        return touchedFields.contains(factory.convertFieldName(name));
+        return touchedFields.contains(convertFieldName(name));
     }
 
     @Contract(" -> new")
