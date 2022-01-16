@@ -1,6 +1,7 @@
 package io.github.asewhy.conversions;
 
 import io.github.asewhy.conversions.exceptions.StoreNotFoundException;
+import io.github.asewhy.conversions.support.annotations.MutatorExcludes;
 import io.github.asewhy.conversions.support.iConversionFactory;
 import lombok.extern.log4j.Log4j2;
 import org.jetbrains.annotations.Contract;
@@ -96,71 +97,71 @@ public abstract class ConversionMutator<T> {
             // Если есть поле
             //
             if(hasField(found)) {
-                var received = foundGetters.containsKey(found) ? ConversionUtils.safeInvoke(foundGetters.get(found), this) : ConversionUtils.safeAccess(found, this);
+                if(requireProcessField(found, context, fill)) {
+                    var received = foundGetters.containsKey(found) ? ConversionUtils.safeInvoke(foundGetters.get(found), this) : ConversionUtils.safeAccess(found, this);
 
-                if(received != null) {
-                    var exists = ConversionUtils.safeAccess(bound, fill);
+                    if(received != null) {
+                        var exists = ConversionUtils.safeAccess(bound, fill);
 
-                    if(received instanceof ConversionMutator mutator && requireProcessNested(mutator)) {
-                        if(exists == null) {
-                            exists = ConversionUtils.safeInstance(boundType);
-                        }
-
-                        mutator.fill(exists);
-                        mutator.fillParent(exists, fill);
-
-                        received = exists;
-                    }
-
-                    if(received instanceof Collection<?> foundCollection && requireProcessNested(foundCollection)) {
-                        var foundSubtype = ConversionUtils.findXGeneric(found);
-                        var boundSubtype = ConversionUtils.findXGeneric(bound);
-                        var foundIdField = ConversionUtils.findTypeId(foundSubtype);
-                        var boundIdField = ConversionUtils.findTypeId(boundSubtype);
-
-                        if(boundIdField != null && foundIdField != null && boundSubtype != null) {
+                        if(received instanceof ConversionMutator mutator && requireProcessNested(found, mutator)) {
                             if(exists == null) {
-                                //
-                                // Создадим экземпляр нужной коллекции
-                                //
-                                exists = ConversionUtils.makeCollectionInstance(boundType);
+                                exists = ConversionUtils.safeInstance(boundType);
                             }
 
-                            var boundCollection = (Collection<Object>) exists;
-                            var existsMap = boundCollection.stream().collect(Collectors.toMap(e -> ConversionUtils.safeAccess(boundIdField, e), e -> e));
-                            var foundMap = foundCollection.stream().collect(Collectors.toMap(e -> ConversionUtils.safeAccess(foundIdField, e), e -> e));
+                            mutator.fill(exists);
+                            mutator.fillParent(exists, fill);
 
-                            boundCollection.removeIf(e -> !foundMap.containsKey(ConversionUtils.safeAccess(boundIdField, e)));
+                            received = exists;
+                        }
 
-                            for(var item: foundCollection) {
-                                if(item instanceof ConversionMutator mutator) {
-                                    var mutatorId = ConversionUtils.safeAccess(foundIdField, mutator);
-                                    var existsItem = existsMap.get(mutatorId);
+                        if(received instanceof Collection<?> foundCollection && requireProcessNested(found, foundCollection)) {
+                            var foundSubtype = ConversionUtils.findXGeneric(found);
+                            var boundSubtype = ConversionUtils.findXGeneric(bound);
+                            var foundIdField = ConversionUtils.findTypeId(foundSubtype);
+                            var boundIdField = ConversionUtils.findTypeId(boundSubtype);
 
-                                    if (mutatorId == null || existsItem == null) {
-                                        //
-                                        // Создадим экземпляр нужного члена коллекции
-                                        //
-                                        if(Map.class.isAssignableFrom(boundSubtype)) {
-                                            boundCollection.add(existsItem = ConversionUtils.makeMapInstance(boundSubtype));
-                                        } else if(Collection.class.isAssignableFrom(boundSubtype)) {
-                                            boundCollection.add(existsItem = ConversionUtils.makeCollectionInstance(boundSubtype));
-                                        } else {
-                                            boundCollection.add(existsItem = ConversionUtils.safeInstance(boundSubtype));
-                                        }
-                                    }
-
-                                    mutator.fill(existsItem);
-                                    mutator.fillParent(existsItem, fill);
+                            if(boundIdField != null && foundIdField != null && boundSubtype != null) {
+                                if(exists == null) {
+                                    //
+                                    // Создадим экземпляр нужной коллекции
+                                    //
+                                    exists = ConversionUtils.makeCollectionInstance(boundType);
                                 }
-                            }
 
-                            received = boundCollection;
+                                var boundCollection = (Collection<Object>) exists;
+                                var existsMap = boundCollection.stream().collect(Collectors.toMap(e -> ConversionUtils.safeAccess(boundIdField, e), e -> e));
+                                var foundMap = foundCollection.stream().collect(Collectors.toMap(e -> ConversionUtils.safeAccess(foundIdField, e), e -> e));
+
+                                boundCollection.removeIf(e -> !foundMap.containsKey(ConversionUtils.safeAccess(boundIdField, e)));
+
+                                for(var item: foundCollection) {
+                                    if(item instanceof ConversionMutator mutator) {
+                                        var mutatorId = ConversionUtils.safeAccess(foundIdField, mutator);
+                                        var existsItem = existsMap.get(mutatorId);
+
+                                        if (mutatorId == null || existsItem == null) {
+                                            //
+                                            // Создадим экземпляр нужного члена коллекции
+                                            //
+                                            if(Map.class.isAssignableFrom(boundSubtype)) {
+                                                boundCollection.add(existsItem = ConversionUtils.makeMapInstance(boundSubtype));
+                                            } else if(Collection.class.isAssignableFrom(boundSubtype)) {
+                                                boundCollection.add(existsItem = ConversionUtils.makeCollectionInstance(boundSubtype));
+                                            } else {
+                                                boundCollection.add(existsItem = ConversionUtils.safeInstance(boundSubtype));
+                                            }
+                                        }
+
+                                        mutator.fill(existsItem);
+                                        mutator.fillParent(existsItem, fill);
+                                    }
+                                }
+
+                                received = boundCollection;
+                            }
                         }
                     }
-                }
 
-                if(requireProcessField(found.getName(), context, fill)) {
                     if(fill instanceof Map map) {
                         map.put(found.getName(), received);
                     } else if(boundSetters.containsKey(bound)) {
@@ -177,11 +178,11 @@ public abstract class ConversionMutator<T> {
         return fill;
     }
 
-    public boolean requireProcessField(String name, Object context, T fill) {
-        return true;
+    public boolean requireProcessField(Field field, Object context, T fill) {
+        return field.getAnnotation(MutatorExcludes.class) == null;
     }
 
-    public boolean requireProcessNested(Object object) {
+    public boolean requireProcessNested(Field field, Object found) {
         return true;
     }
 

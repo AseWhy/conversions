@@ -4,6 +4,7 @@ io/github/asewhy/conversions/support/annotations/ConvertMutator.class
 io/github/asewhy/conversions/support/annotations/EnableConversions.class
 io/github/asewhy/conversions/ConversionFactoryInternal.class
 io/github/asewhy/conversions/ResponseMessageHandler.class
+io/github/asewhy/conversions/support/annotations/MutatorExcludes.class
 io/github/asewhy/conversions/support/ClassMetadata.class
 io/github/asewhy/conversions/ConversionProvider.class
 io/github/asewhy/conversions/support/annotations/MutatorDTO.class

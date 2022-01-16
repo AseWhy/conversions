@@ -13,6 +13,7 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Objects;
 
@@ -22,7 +23,9 @@ public record MutatorArgumentResolver(
 ) implements HandlerMethodArgumentResolver {
     @Override
     public boolean supportsParameter(MethodParameter parameter) {
-        return parameter.getParameterAnnotation(ConvertMutator.class) != null || parameter.getParameterAnnotation(ConvertRequest.class) != null;
+        return
+            parameter.getParameterAnnotation(ConvertMutator.class) != null ||
+            parameter.getParameterAnnotation(ConvertRequest.class) != null;
     }
 
     @Override
@@ -40,11 +43,24 @@ public record MutatorArgumentResolver(
             var tree = objectMapper.readTree(httpServletRequest.getInputStream());
 
             if(parameter.getParameterAnnotation(ConvertMutator.class) != null) {
+                var type = parameter.getParameterType();
                 var parsed = objectMapper.treeToValue(tree, Map.class);
-                var result = objectMapper.treeToValue(tree, parameter.getParameterType());
+                var result = objectMapper.treeToValue(tree, type);
 
-                if (factory.getStore().isPresentMutator(parameter.getParameterType()) && result instanceof ConversionMutator<?> mutator) {
-                    provider.createMutator(mutator, parsed);
+                if(result instanceof Collection<?> collection) {
+                    var generic = ConversionUtils.findXGeneric(parameter.getGenericParameterType());
+
+                    if(generic != null && factory.getStore().isPresentMutator(generic)) {
+                        for (var current : collection) {
+                            if (current instanceof ConversionMutator<?> mutator){
+                                provider.createMutator(mutator, parsed);
+                            }
+                        }
+                    }
+                } else {
+                    if (factory.getStore().isPresentMutator(parameter.getParameterType()) && result instanceof ConversionMutator<?> mutator) {
+                        provider.createMutator(mutator, parsed);
+                    }
                 }
 
                 return validate(result, nativeWebRequest, binderFactory, parameter);

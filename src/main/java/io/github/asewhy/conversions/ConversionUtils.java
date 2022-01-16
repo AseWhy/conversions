@@ -134,14 +134,12 @@ public class ConversionUtils {
     }
 
     /**
-     * Получить первый generic параметр у поля
+     * Получить первый generic параметр из типа
      *
-     * @param from поле, generic значение которого нужно получить
+     * @param genericsParams тип из которого нужно получить параметер
      * @return generic тип или nell
      */
-    public static @Nullable Class<?> findXGeneric(@NotNull Field from) {
-        var genericsParams = from.getGenericType();
-
+    public static @Nullable Class<?> findXGeneric(@NotNull Type genericsParams) {
         if(genericsParams instanceof ParameterizedType pt) {
             var generics = pt.getActualTypeArguments();
 
@@ -164,36 +162,23 @@ public class ConversionUtils {
     }
 
     /**
+     * Получить первый generic параметр у поля
+     *
+     * @param from поле, generic значение которого нужно получить
+     * @return generic тип или nell
+     */
+    public static @Nullable Class<?> findXGeneric(@NotNull Field from) {
+        return findXGeneric(from.getGenericType());
+    }
+
+    /**
      * Получить первый generic параметр у класса
      *
      * @param from класс из супер класса, которого нужно получить generic
      * @return generic тип или null
      */
     public static @Nullable Class<?> findXGeneric(@NotNull Class<?> from) {
-        var superClass = from.getGenericSuperclass();
-
-        if(superClass instanceof ParameterizedType parameterizedClass) {
-            var fromGenerics = parameterizedClass.getActualTypeArguments();
-            var fromGeneric = (Class<?>) null;
-
-            if (fromGenerics.length > 0) {
-                var genericType = fromGenerics[0];
-
-                if (genericType instanceof Class<?> c) {
-                    fromGeneric = c;
-                } else if (genericType instanceof ParameterizedType c) {
-                    var type = c.getRawType();
-
-                    if (type instanceof Class<?> d) {
-                        fromGeneric = d;
-                    }
-                }
-            }
-
-            return fromGeneric;
-        } else {
-            return null;
-        }
+        return findXGeneric(from.getGenericSuperclass());
     }
 
     /**
