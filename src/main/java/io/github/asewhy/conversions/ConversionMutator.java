@@ -27,7 +27,7 @@ public abstract class ConversionMutator<T> {
      *
      * @param internal хранилище типов
      */
-    protected void registerStore(ConversionFactoryInternal internal) {
+    protected void registerStore(@NotNull ConversionFactoryInternal internal) {
         this.factory = internal.getFactory();
         this.store = internal.getStore();
     }
@@ -38,7 +38,7 @@ public abstract class ConversionMutator<T> {
      * @param fill объект заполнения
      * @param parent родительская сущность
      */
-    protected void fillParent(T fill, Object parent) {
+    protected void fillParent(T fill, @NotNull Object parent) {
         var parentClazz = parent.getClass();
         var metadata = store.getMutatorBound(this.getClass());
         var parentField = metadata.getBoundField(parentClazz);
@@ -178,7 +178,7 @@ public abstract class ConversionMutator<T> {
         return fill;
     }
 
-    public boolean requireProcessField(Field field, Object context, T fill) {
+    public boolean requireProcessField(@NotNull Field field, Object context, T fill) {
         return field.getAnnotation(MutatorExcludes.class) == null;
     }
 

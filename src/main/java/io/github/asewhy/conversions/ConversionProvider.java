@@ -168,7 +168,10 @@ public class ConversionProvider {
             //
             // Класс не найден в сторе для преобразования
             //
-            throw new IllegalArgumentException("It's entity is not registered on current store. " + fromClass);
+            throw new IllegalArgumentException(
+                "It's entity is not registered on current store. " + fromClass + "\n" +
+                "Check the classloader used to initialize the store, and the current classloader."
+            );
         }
 
         var instance = (T) null;

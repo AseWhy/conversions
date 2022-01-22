@@ -27,3 +27,4 @@ io/github/asewhy/conversions/builders/MutatorObjectBuilder.class
 io/github/asewhy/conversions/ConversionResolver.class
 io/github/asewhy/conversions/support/annotations/IgnoreMatch.class
 io/github/asewhy/conversions/ConversionUtils.class
+io/github/asewhy/conversions/ConversionContextMutator.class

@@ -13,7 +13,7 @@ import java.util.stream.Stream;
 @SuppressWarnings("rawtypes")
 public class ConversionUtils {
     public final static String COMMON_MAPPING = "common";
-    private final static Pattern PROXY_NAME_PATTERN = Pattern.compile("\\$(.+)Proxy\\$(.*)$", Pattern.MULTILINE);
+    private final static Pattern PROXY_NAME_PATTERN = Pattern.compile("\\$(.+)Proxy\\$(.*)$");
 
     /**
      * Быстрый поиск по карте, ключом в которой является класс, метод учитывает наследование классов. Если

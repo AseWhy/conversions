@@ -68,11 +68,21 @@ public class ConversionStore {
     }
 
     /**
-     * Добавляет все компоненты автоматически из выбранного пакета
+     * Добавляет все компоненты автоматически из выбранного пакета (Использует текущий загрузчик классов)
      *
      * @param packageName название пакета
      */
     public void from(String packageName) {
+        from(packageName, getClass().getClassLoader());
+    }
+
+    /**
+     * Добавляет все компоненты автоматически из выбранного пакета
+     *
+     * @param packageName название пакета
+     * @param loader загрузчик классов, который следует использовать для загрузки аннотированных классов
+     */
+    public void from(String packageName, ClassLoader loader) {
         var scanner = new ClassPathScanningCandidateComponentProvider(false);
 
         scanner.addIncludeFilter(new AnnotationTypeFilter(MutatorDTO.class));
@@ -81,7 +91,7 @@ public class ConversionStore {
 
         for(var current: scanner.findCandidateComponents(packageName)) {
             try {
-                var clazz = Class.forName(current.getBeanClassName());
+                var clazz = Class.forName(current.getBeanClassName(), false, loader);
                 var generic = ConversionUtils.findXGeneric(clazz);
 
                 if(
