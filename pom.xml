@@ -15,12 +15,18 @@
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <org.apache.logging.log4j.log4j-core.version>2.17.0</org.apache.logging.log4j.log4j-core.version>
-        <org.springframework.spring-webmvc.version>5.3.13</org.springframework.spring-webmvc.version>
-        <com.fasterxml.jackson.core.jackson-databind.version>2.13.0</com.fasterxml.jackson.core.jackson-databind.version>
-        <org.springframework.boot.spring-boot-autoconfigure.version>2.6.1</org.springframework.boot.spring-boot-autoconfigure.version>
+        <org.springframework.spring-webmvc.version>5.3.15</org.springframework.spring-webmvc.version>
+        <com.fasterxml.jackson.core.jackson-databind.version>2.13.1</com.fasterxml.jackson.core.jackson-databind.version>
+        <org.springframework.boot.spring-boot-autoconfigure.version>2.6.2</org.springframework.boot.spring-boot-autoconfigure.version>
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>io.github.asewhy</groupId>
+            <artifactId>reflection-utils</artifactId>
+            <version>1.0</version>
+        </dependency>
+
         <dependency>
             <groupId>org.jetbrains</groupId>
             <artifactId>annotations</artifactId>
@@ -79,7 +85,7 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
-            <version>2.6.0</version>
+            <version>2.6.2</version>
         </dependency>
 
         <dependency>

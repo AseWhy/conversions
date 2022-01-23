@@ -1,5 +1,6 @@
 package io.github.asewhy.conversions;
 
+import io.github.asewhy.ReflectionUtils;
 import io.github.asewhy.conversions.exceptions.StoreNotFoundException;
 import io.github.asewhy.conversions.support.annotations.MutatorExcludes;
 import io.github.asewhy.conversions.support.iConversionFactory;
@@ -48,9 +49,9 @@ public abstract class ConversionMutator<T> {
             var parentSetter = boundSetters.get(parentField);
 
             if(parentSetter != null) {
-                ConversionUtils.safeInvoke(parentSetter, fill, parent);
+                ReflectionUtils.safeInvoke(parentSetter, fill, parent);
             } else {
-                ConversionUtils.safeSet(parentField, fill, parent);
+                ReflectionUtils.safeSet(parentField, fill, parent);
             }
         }
 
@@ -98,14 +99,14 @@ public abstract class ConversionMutator<T> {
             //
             if(hasField(found)) {
                 if(requireProcessField(found, context, fill)) {
-                    var received = foundGetters.containsKey(found) ? ConversionUtils.safeInvoke(foundGetters.get(found), this) : ConversionUtils.safeAccess(found, this);
+                    var received = foundGetters.containsKey(found) ? ReflectionUtils.safeInvoke(foundGetters.get(found), this) : ReflectionUtils.safeAccess(found, this);
 
                     if(received != null) {
-                        var exists = ConversionUtils.safeAccess(bound, fill);
+                        var exists = ReflectionUtils.safeAccess(bound, fill);
 
                         if(received instanceof ConversionMutator mutator && requireProcessNested(found, mutator)) {
                             if(exists == null) {
-                                exists = ConversionUtils.safeInstance(boundType);
+                                exists = ReflectionUtils.safeInstance(boundType);
                             }
 
                             mutator.fill(exists);
@@ -115,28 +116,28 @@ public abstract class ConversionMutator<T> {
                         }
 
                         if(received instanceof Collection<?> foundCollection && requireProcessNested(found, foundCollection)) {
-                            var foundSubtype = ConversionUtils.findXGeneric(found);
-                            var boundSubtype = ConversionUtils.findXGeneric(bound);
-                            var foundIdField = ConversionUtils.findTypeId(foundSubtype);
-                            var boundIdField = ConversionUtils.findTypeId(boundSubtype);
+                            var foundSubtype = ReflectionUtils.findXGeneric(found);
+                            var boundSubtype = ReflectionUtils.findXGeneric(bound);
+                            var foundIdField = ReflectionUtils.findTypeId(foundSubtype);
+                            var boundIdField = ReflectionUtils.findTypeId(boundSubtype);
 
                             if(boundIdField != null && foundIdField != null && boundSubtype != null) {
                                 if(exists == null) {
                                     //
                                     // Создадим экземпляр нужной коллекции
                                     //
-                                    exists = ConversionUtils.makeCollectionInstance(boundType);
+                                    exists = ReflectionUtils.makeCollectionInstance(boundType);
                                 }
 
                                 var boundCollection = (Collection<Object>) exists;
-                                var existsMap = boundCollection.stream().collect(Collectors.toMap(e -> ConversionUtils.safeAccess(boundIdField, e), e -> e));
-                                var foundMap = foundCollection.stream().collect(Collectors.toMap(e -> ConversionUtils.safeAccess(foundIdField, e), e -> e));
+                                var existsMap = boundCollection.stream().collect(Collectors.toMap(e -> ReflectionUtils.safeAccess(boundIdField, e), e -> e));
+                                var foundMap = foundCollection.stream().collect(Collectors.toMap(e -> ReflectionUtils.safeAccess(foundIdField, e), e -> e));
 
-                                boundCollection.removeIf(e -> !foundMap.containsKey(ConversionUtils.safeAccess(boundIdField, e)));
+                                boundCollection.removeIf(e -> !foundMap.containsKey(ReflectionUtils.safeAccess(boundIdField, e)));
 
                                 for(var item: foundCollection) {
                                     if(item instanceof ConversionMutator mutator) {
-                                        var mutatorId = ConversionUtils.safeAccess(foundIdField, mutator);
+                                        var mutatorId = ReflectionUtils.safeAccess(foundIdField, mutator);
                                         var existsItem = existsMap.get(mutatorId);
 
                                         if (mutatorId == null || existsItem == null) {
@@ -144,11 +145,11 @@ public abstract class ConversionMutator<T> {
                                             // Создадим экземпляр нужного члена коллекции
                                             //
                                             if(Map.class.isAssignableFrom(boundSubtype)) {
-                                                boundCollection.add(existsItem = ConversionUtils.makeMapInstance(boundSubtype));
+                                                boundCollection.add(existsItem = ReflectionUtils.makeMapInstance(boundSubtype));
                                             } else if(Collection.class.isAssignableFrom(boundSubtype)) {
-                                                boundCollection.add(existsItem = ConversionUtils.makeCollectionInstance(boundSubtype));
+                                                boundCollection.add(existsItem = ReflectionUtils.makeCollectionInstance(boundSubtype));
                                             } else {
-                                                boundCollection.add(existsItem = ConversionUtils.safeInstance(boundSubtype));
+                                                boundCollection.add(existsItem = ReflectionUtils.safeInstance(boundSubtype));
                                             }
                                         }
 
@@ -165,9 +166,9 @@ public abstract class ConversionMutator<T> {
                     if(fill instanceof Map map) {
                         map.put(found.getName(), received);
                     } else if(boundSetters.containsKey(bound)) {
-                        ConversionUtils.safeInvoke(boundSetters.get(bound), fill, received);
+                        ReflectionUtils.safeInvoke(boundSetters.get(bound), fill, received);
                     } else {
-                        ConversionUtils.safeSet(bound, fill, received);
+                        ReflectionUtils.safeSet(bound, fill, received);
                     }
                 }
             }

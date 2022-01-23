@@ -1,5 +1,6 @@
 package io.github.asewhy.conversions;
 
+import io.github.asewhy.ReflectionUtils;
 import io.github.asewhy.conversions.support.CaseUtil;
 import io.github.asewhy.conversions.support.ClassMetadata;
 import io.github.asewhy.conversions.support.annotations.IgnoreMatch;
@@ -54,7 +55,7 @@ public class ConversionStore {
      * @return true если имеется
      */
     public boolean isPresentResponse(Class<?> clazz) {
-        return clazz != null && ConversionUtils.findOnClassMap(responseMap, clazz) != null;
+        return clazz != null && ReflectionUtils.findOnClassMap(responseMap, clazz) != null;
     }
 
     /**
@@ -64,7 +65,7 @@ public class ConversionStore {
      * @return true если имеется
      */
     public boolean isPresentMutator(Class<?> clazz) {
-        return clazz != null && ConversionUtils.findOnClassMap(mutatorsMap, clazz) != null;
+        return clazz != null && ReflectionUtils.findOnClassMap(mutatorsMap, clazz) != null;
     }
 
     /**
@@ -92,7 +93,7 @@ public class ConversionStore {
         for(var current: scanner.findCandidateComponents(packageName)) {
             try {
                 var clazz = Class.forName(current.getBeanClassName(), false, loader);
-                var generic = ConversionUtils.findXGeneric(clazz);
+                var generic = ReflectionUtils.findXGeneric(clazz);
 
                 if(
                     generic != null && (
@@ -158,10 +159,10 @@ public class ConversionStore {
         var fieldsSetters = metadata.getBoundSetters();
         var fieldsGetters = metadata.getFoundGetters();
         var fieldsBound = metadata.getBoundFieldsMap();
-        var foundFields = ConversionUtils.scanFieldsToMap(target);
-        var boundFields = ConversionUtils.scanFieldsToMap(response);
-        var foundMethods = ConversionUtils.scanMethodsToMap(target);
-        var boundMethods = ConversionUtils.scanMethodsToMap(response);
+        var foundFields = ReflectionUtils.scanFieldsToMap(target);
+        var boundFields = ReflectionUtils.scanFieldsToMap(response);
+        var foundMethods = ReflectionUtils.scanMethodsToMap(target);
+        var boundMethods = ReflectionUtils.scanMethodsToMap(response);
 
         metadata.setBoundClass(response);
         metadata.setIsMap(Map.class.isAssignableFrom(target));
@@ -230,10 +231,10 @@ public class ConversionStore {
         var fieldsSetters = metadata.getBoundSetters();
         var fieldsGetters = metadata.getFoundGetters();
         var fieldsBound = metadata.getBoundFieldsMap();
-        var foundFields = ConversionUtils.scanFieldsToMap(mutator);
-        var boundFields = ConversionUtils.scanFieldsToMap(target);
-        var foundMethods = ConversionUtils.scanMethodsToMap(mutator);
-        var boundMethods = ConversionUtils.scanMethodsToMap(target);
+        var foundFields = ReflectionUtils.scanFieldsToMap(mutator);
+        var boundFields = ReflectionUtils.scanFieldsToMap(target);
+        var foundMethods = ReflectionUtils.scanMethodsToMap(mutator);
+        var boundMethods = ReflectionUtils.scanMethodsToMap(target);
 
         metadata.setBoundClass(target);
         metadata.setIsMap(Map.class.isAssignableFrom(target));
@@ -293,18 +294,18 @@ public class ConversionStore {
      * @return true если коллекции можно конвертировать
      */
     protected boolean isConventionalCollection(Field compare, Field source) {
-        var requireBeConverter = ConversionUtils.findXGeneric(source);
+        var requireBeConverter = ReflectionUtils.findXGeneric(source);
 
         if(requireBeConverter == null) {
             return false;
         } else {
-            var compareGeneric = ConversionUtils.findXGeneric(compare);
+            var compareGeneric = ReflectionUtils.findXGeneric(compare);
 
             if(compareGeneric != null && requireBeConverter == compareGeneric) {
                 return true;
             }
 
-            var sourceGeneric = ConversionUtils.findXGeneric(requireBeConverter);
+            var sourceGeneric = ReflectionUtils.findXGeneric(requireBeConverter);
 
             if(compareGeneric != null && sourceGeneric != null) {
                 return sourceGeneric.isAssignableFrom(compareGeneric);
@@ -322,7 +323,7 @@ public class ConversionStore {
      * @return true если истина
      */
     protected boolean isConverterOwn(Field found, Class<?> boundClazz) {
-        var generic = ConversionUtils.findXGeneric(boundClazz);
+        var generic = ReflectionUtils.findXGeneric(boundClazz);
 
         if(generic != null) {
             return generic.isAssignableFrom(found.getType());
@@ -339,7 +340,7 @@ public class ConversionStore {
      * @return найденный обработчик или null
      */
     public <T> ConversionResolver<T> findMappingResolver(Class<? extends T> forClass) {
-        return (ConversionResolver<T>) ConversionUtils.findOnClassMap(resolversMap, forClass);
+        return (ConversionResolver<T>) ReflectionUtils.findOnClassMap(resolversMap, forClass);
     }
 
     /**
@@ -366,7 +367,7 @@ public class ConversionStore {
      * @return найденные бинды, или пустая карта
      */
     protected @NotNull ClassMetadata getResponseBound(Class<?> forClass, String mapping) {
-        var source = ConversionUtils.findOnClassMap(responseMap, forClass);
+        var source = ReflectionUtils.findOnClassMap(responseMap, forClass);
 
         if(source == null) {
             source = new HashMap<>();

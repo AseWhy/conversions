@@ -1,5 +1,6 @@
 package io.github.asewhy.conversions;
 
+import io.github.asewhy.ReflectionUtils;
 import io.github.asewhy.conversions.support.annotations.ConvertMutator;
 import io.github.asewhy.conversions.support.annotations.ConvertRequest;
 import org.jetbrains.annotations.Contract;
@@ -48,7 +49,7 @@ public record MutatorArgumentResolver(
                 var result = objectMapper.treeToValue(tree, type);
 
                 if(result instanceof Collection<?> collection) {
-                    var generic = ConversionUtils.findXGeneric(parameter.getGenericParameterType());
+                    var generic = ReflectionUtils.findXGeneric(parameter.getGenericParameterType());
 
                     if(generic != null && factory.getStore().isPresentMutator(generic)) {
                         for (var current : collection) {

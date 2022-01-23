@@ -1,13 +1,16 @@
 package io.github.asewhy.conversions.support;
 
-import io.github.asewhy.conversions.ConversionUtils;
+import io.github.asewhy.ReflectionUtils;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -73,7 +76,7 @@ public class ClassMetadata {
      * @return полученное значение
      */
     public Object getFieldValue(Object from, Field found) {
-        return foundGetters.containsKey(found) ? ConversionUtils.safeInvoke(foundGetters.get(found), from) : ConversionUtils.safeAccess(found, from);
+        return foundGetters.containsKey(found) ? ReflectionUtils.safeInvoke(foundGetters.get(found), from) : ReflectionUtils.safeAccess(found, from);
     }
 
     /**

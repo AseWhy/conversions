@@ -1,5 +1,6 @@
 package io.github.asewhy.conversions;
 
+import io.github.asewhy.ReflectionUtils;
 import io.github.asewhy.conversions.builders.MutatorObjectBuilder;
 import io.github.asewhy.conversions.support.annotations.ResponseDTO;
 import lombok.Getter;
@@ -56,7 +57,7 @@ public class ConversionProvider {
 
             if (mirror.containsKey(jsonName)) {
                 var mirrorValue = mirror.get(jsonName);
-                var found = ConversionUtils.safeAccess(current, from);
+                var found = ReflectionUtils.safeAccess(current, from);
 
                 from.touchedFields.add(jsonName);
 
@@ -151,7 +152,7 @@ public class ConversionProvider {
         }
 
         var store = factory.getStore();
-        var fromClass = ConversionUtils.skipAnonClasses(from.getClass());
+        var fromClass = ReflectionUtils.skipAnonClasses(from.getClass());
 
         if(applyMappingConversion) {
             var resolver = (ConversionResolver<Object>) store.findMappingResolver(fromClass);
@@ -207,8 +208,8 @@ public class ConversionProvider {
                     }
 
                     if(result instanceof Collection<?> collection) {
-                        var tempArray = ConversionUtils.makeCollectionInstance(foundType);
-                        var boundGeneric = ConversionUtils.findXGeneric(bound);
+                        var tempArray = ReflectionUtils.makeCollectionInstance(foundType);
+                        var boundGeneric = ReflectionUtils.findXGeneric(bound);
                         var isBoundedArray = boundGeneric != null && ConversionResponse.class.isAssignableFrom(boundGeneric);
 
                         for(var item: collection) {
@@ -232,9 +233,9 @@ public class ConversionProvider {
 
                 if(foundType == null || foundType.isAssignableFrom(boundType)) {
                     if(setters.containsKey(bound)) {
-                        ConversionUtils.safeInvoke(setters.get(bound), instance, result);
+                        ReflectionUtils.safeInvoke(setters.get(bound), instance, result);
                     } else {
-                        ConversionUtils.safeSet(bound, instance, result);
+                        ReflectionUtils.safeSet(bound, instance, result);
                     }
                 }
             }
@@ -271,8 +272,8 @@ public class ConversionProvider {
                     }
 
                     if(result instanceof Collection<?> collection) {
-                        var tempArray = ConversionUtils.makeCollectionInstance(foundType);
-                        var boundGeneric = ConversionUtils.findXGeneric(bound);
+                        var tempArray = ReflectionUtils.makeCollectionInstance(foundType);
+                        var boundGeneric = ReflectionUtils.findXGeneric(bound);
                         var isBoundedArray = boundGeneric != null && ConversionResponse.class.isAssignableFrom(boundGeneric);
 
                         for(var item: collection) {
@@ -292,9 +293,9 @@ public class ConversionProvider {
                 }
 
                 if (setters.containsKey(bound)) {
-                    ConversionUtils.safeInvoke(setters.get(bound), instance, result);
+                    ReflectionUtils.safeInvoke(setters.get(bound), instance, result);
                 } else {
-                    ConversionUtils.safeSet(bound, instance, result);
+                    ReflectionUtils.safeSet(bound, instance, result);
                 }
             }
         }

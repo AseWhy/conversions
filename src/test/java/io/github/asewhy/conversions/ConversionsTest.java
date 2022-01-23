@@ -1,5 +1,6 @@
 package io.github.asewhy.conversions;
 
+import io.github.asewhy.ReflectionUtils;
 import io.github.asewhy.conversions.config.ConversationalTestFactory;
 import io.github.asewhy.conversions.config.classMap.A;
 import io.github.asewhy.conversions.config.classMap.B;
@@ -33,7 +34,7 @@ public class ConversionsTest {
         map.put(C.class, 2);
         map.put(A.class, 0);
         map.put(B.class, 1);
-        var result = ConversionUtils.findOnClassMap(map, D.class);
+        var result = ReflectionUtils.findOnClassMap(map, D.class);
         Assertions.assertThat(result).isEqualTo(2);
     }
 
