@@ -5,6 +5,12 @@ import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
 
+/**
+ * Конвертируемый мутатор сервиса
+ *
+ * @param <T> тип мутируемого элемента, тип который будет принимать метод fill мутатора
+ * @param <C> тип контекста принимаемого мутатором
+ */
 @Log4j2
 @SuppressWarnings("unchecked")
 public abstract class ConversionContextMutator<T, C> extends ConversionMutator<T> {

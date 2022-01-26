@@ -15,6 +15,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Конвертируемый мутатор сервиса
+ *
+ * @param <T> тип мутируемого элемента, тип который будет принимать метод fill мутатора
+ */
 @Log4j2
 @SuppressWarnings({"UnusedReturnValue", "unused", "unchecked"})
 public abstract class ConversionMutator<T> {
@@ -65,6 +70,17 @@ public abstract class ConversionMutator<T> {
      * @return заполненная сущность
      */
     public final T fill(T fill) {
+        return fill(fill, factory.provideContext());
+    }
+
+    /**
+     * Заполнить целевую сущность значениями из этого мутатора
+     *
+     * @param fill сущность для заполнения
+     * @param context контекст заполнения
+     * @return заполненная сущность
+     */
+    public final T fill(T fill, Object context) {
         if(store == null) {
             throw new StoreNotFoundException(fill);
         }
@@ -76,7 +92,6 @@ public abstract class ConversionMutator<T> {
         var foundFields = metadata.getIntersects();
         var boundSetters = metadata.getBoundSetters();
         var foundGetters = metadata.getFoundGetters();
-        var context = factory.provideContext();
 
         //
         // Перебираю поля, с совпадающими типами
@@ -109,7 +124,7 @@ public abstract class ConversionMutator<T> {
                                 exists = ReflectionUtils.safeInstance(boundType);
                             }
 
-                            mutator.fill(exists);
+                            mutator.fill(exists, context);
                             mutator.fillParent(exists, fill);
 
                             received = exists;
@@ -153,7 +168,7 @@ public abstract class ConversionMutator<T> {
                                             }
                                         }
 
-                                        mutator.fill(existsItem);
+                                        mutator.fill(existsItem, context);
                                         mutator.fillParent(existsItem, fill);
                                     }
                                 }

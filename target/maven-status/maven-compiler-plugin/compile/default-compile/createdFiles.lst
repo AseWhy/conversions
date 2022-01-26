@@ -2,6 +2,7 @@ io/github/asewhy/conversions/ConversionMutator.class
 io/github/asewhy/conversions/support/CallbackNameStrategy.class
 io/github/asewhy/conversions/support/annotations/ConvertMutator.class
 io/github/asewhy/conversions/support/annotations/EnableConversions.class
+io/github/asewhy/conversions/ConversionContextResponse.class
 io/github/asewhy/conversions/ConversionFactoryInternal.class
 io/github/asewhy/conversions/ResponseMessageHandler.class
 io/github/asewhy/conversions/support/annotations/MutatorExcludes.class
