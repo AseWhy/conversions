@@ -121,7 +121,7 @@ public class ConversionProvider {
      * @param from конвертируемый объект
      * @return конвертированный объект
      */
-    public <T> T createResponseResolve(T from, String mapping) {
+    public Object createResponseResolve(Object from, String mapping) {
         if(from == null) {
             return null;
         }
@@ -130,7 +130,11 @@ public class ConversionProvider {
         var store = factory.getStore();
         var resolver = store.findResolver(type);
 
-        return resolver.resolveResponse(from, type, this, mapping);
+        if(resolver != null) {
+            return resolver.resolveResponse(from, type, this, mapping);
+        } else {
+            return createResponse(from, mapping);
+        }
     }
 
     /**

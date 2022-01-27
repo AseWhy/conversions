@@ -145,8 +145,7 @@ public class ConversionStore {
                 if(
                     generic != null && (
                         ConversionMutator.class.isAssignableFrom(clazz) && clazz.isAnnotationPresent(MutatorDTO.class) ||
-                        ConversionResponse.class.isAssignableFrom(clazz) && clazz.isAnnotationPresent(ResponseDTO.class) ||
-                        ConversionMapper.class.isAssignableFrom(clazz) && clazz.isAssignableFrom(DataMapper.class)
+                        ConversionResponse.class.isAssignableFrom(clazz) && clazz.isAnnotationPresent(ResponseDTO.class)
                     )
                 ) {
                     register(clazz, generic);
@@ -195,6 +194,8 @@ public class ConversionStore {
 
         metadata.setBoundClass(response);
         metadata.setIsMap(Map.class.isAssignableFrom(target));
+
+        log.info("Register conversion response from " + target.getSimpleName() + " to " + response.getSimpleName());
 
         for(var current: foundFields.entrySet()) {
             var found = current.getValue();
@@ -267,6 +268,8 @@ public class ConversionStore {
 
         metadata.setBoundClass(target);
         metadata.setIsMap(Map.class.isAssignableFrom(target));
+
+        log.info("Register conversion mutator from " + mutator.getSimpleName() + " to " + target.getSimpleName());
 
         for(var current: foundFields.entrySet()) {
             var found = current.getValue();

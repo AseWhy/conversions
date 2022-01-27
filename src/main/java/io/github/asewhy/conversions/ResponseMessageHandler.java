@@ -3,6 +3,7 @@ package io.github.asewhy.conversions;
 import io.github.asewhy.ReflectionUtils;
 import io.github.asewhy.conversions.support.annotations.ConvertResponse;
 import io.github.asewhy.conversions.support.annotations.ShiftController;
+import lombok.extern.log4j.Log4j2;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.converter.HttpMessageConverter;
@@ -15,6 +16,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
 
+@Log4j2
 public final class ResponseMessageHandler extends RequestResponseBodyMethodProcessor {
     private final ConversionProvider provider;
 
@@ -50,13 +52,13 @@ public final class ResponseMessageHandler extends RequestResponseBodyMethodProce
         var httpServletRequest = webRequest.getNativeResponse(HttpServletResponse.class);
 
         if(httpServletRequest != null) {
-            var converted = (Object) null;
+            var converted = returnValue;
             var mapping = getMappingName(returnType);
 
             if(canProcess(returnType, mapping)) {
                 converted = provider.createResponseResolve(returnValue, mapping);
             } else {
-                converted = returnValue;
+                log.warn("IS NOT A CONVERTIBLE ENTITY " + returnType.getParameterType());
             }
 
             super.handleReturnValue(converted, returnType, mavContainer, webRequest);
@@ -101,7 +103,12 @@ public final class ResponseMessageHandler extends RequestResponseBodyMethodProce
     private boolean canProcess(@NotNull MethodParameter parameter, String mapping) {
         var result = parameter.getParameterType();
         var generic = ReflectionUtils.findXGeneric(parameter.getGenericParameterType());
+        var store = provider.getFactory().getStore();
 
-        return provider.canResolveResponse(result, generic, mapping);
+        if(store.isPresentResponse(result)) {
+            return true;
+        } else {
+            return provider.canResolveResponse(result, generic, mapping);
+        }
     }
 }
