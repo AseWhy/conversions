@@ -3,18 +3,16 @@ package io.github.asewhy.conversions;
 import io.github.asewhy.ReflectionUtils;
 import io.github.asewhy.conversions.support.CaseUtil;
 import io.github.asewhy.conversions.support.ClassMetadata;
-import io.github.asewhy.conversions.support.annotations.IgnoreMatch;
-import io.github.asewhy.conversions.support.annotations.MutatorDTO;
-import io.github.asewhy.conversions.support.annotations.ResponseDTO;
-import io.github.asewhy.conversions.support.annotations.ResponseResolver;
+import io.github.asewhy.conversions.support.annotations.DataResolver;
+import io.github.asewhy.conversions.support.annotations.*;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
 import org.jetbrains.annotations.NotNull;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,7 +24,52 @@ import java.util.Objects;
 public class ConversionStore {
     private final Map<Class<?>, ClassMetadata> mutatorsMap = new HashMap<>();
     private final Map<Class<?>, Map<String, ClassMetadata>> responseMap = new HashMap<>();
-    private final Map<Class<?>, ConversionResolver<?>> resolversMap = new HashMap<>();
+    private final Map<Class<?>, ConversionMapper<?>> mappersMap = new HashMap<>();
+    private final Map<Class<?>, ConversionResolver<?>> containerConverterMap = new HashMap<>();
+
+    /**
+     * Создать экземпляр стора
+     */
+    public ConversionStore() {
+
+    }
+
+    /**
+     * Создать экземпляр стора и загрузить сервисные компоненты из контекста приложения
+     *
+     * @param context контекст приложения
+     */
+    public ConversionStore(ApplicationContext context) {
+        loadContext(context);
+    }
+
+    /**
+     * Загрузить сервисные компоненты из контекста приложения
+     *
+     * @param context контекст приложения
+     */
+    public void loadContext(@NotNull ApplicationContext context) {
+        var mappers = context.getBeansWithAnnotation(DataMapper.class).values();
+        var resolvers = context.getBeansWithAnnotation(DataResolver.class).values();
+
+        for(var current: mappers) {
+            var type = current.getClass();
+            var generic = ReflectionUtils.findXGeneric(type);
+
+            if(current instanceof ConversionMapper<?> mapper) {
+                this.mappersMap.put(generic, mapper);
+            }
+        }
+
+        for(var current: resolvers) {
+            var type = current.getClass();
+            var generic = ReflectionUtils.findXGeneric(type);
+
+            if(current instanceof ConversionResolver<?> resolver) {
+                this.containerConverterMap.put(generic, resolver);
+            }
+        }
+    }
 
     /**
      * Получить маппинг из класса
@@ -88,7 +131,7 @@ public class ConversionStore {
 
         scanner.addIncludeFilter(new AnnotationTypeFilter(MutatorDTO.class));
         scanner.addIncludeFilter(new AnnotationTypeFilter(ResponseDTO.class));
-        scanner.addIncludeFilter(new AnnotationTypeFilter(ResponseResolver.class));
+        scanner.addIncludeFilter(new AnnotationTypeFilter(DataMapper.class));
 
         for(var current: scanner.findCandidateComponents(packageName)) {
             try {
@@ -99,7 +142,7 @@ public class ConversionStore {
                     generic != null && (
                         ConversionMutator.class.isAssignableFrom(clazz) && clazz.isAnnotationPresent(MutatorDTO.class) ||
                         ConversionResponse.class.isAssignableFrom(clazz) && clazz.isAnnotationPresent(ResponseDTO.class) ||
-                        ConversionResolver.class.isAssignableFrom(clazz) && clazz.isAssignableFrom(ResponseResolver.class)
+                        ConversionMapper.class.isAssignableFrom(clazz) && clazz.isAssignableFrom(DataMapper.class)
                     )
                 ) {
                     register(clazz, generic);
@@ -121,26 +164,8 @@ public class ConversionStore {
             this.registerResponse(target, reg);
         } else if(ConversionMutator.class.isAssignableFrom(reg)) {
             this.registerMutator(reg, target);
-        } else if(ConversionResolver.class.isAssignableFrom(reg)) {
-            this.registerResolver(reg, target);
         } else {
             throw new IllegalArgumentException("Received class is not ConversionResponse or ConversionMutator");
-        }
-    }
-
-    /**
-     * Зарегистрировать обработчик типов ответа
-     *
-     * @param reg регистрируемый обработчик
-     * @param target цель обработчика, сущности ответа какого типа он будет обрабатывать
-     */
-    private void registerResolver(@NotNull Class<?> reg, Class<?> target) {
-        try {
-            this.resolversMap.put(target, (ConversionResolver<?>) reg.getConstructor().newInstance());
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException("Cannot find default constructor on " + reg.getName(), e);
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -333,14 +358,25 @@ public class ConversionStore {
     }
 
     /**
+     * Найти конвертер для конвертации по целевому типу
+     *
+     * @param forClass класс для которого нужен конвертер
+     * @param <T> целевой тип
+     * @return конвертер
+     */
+    public <T> ConversionResolver<T> findResolver(Class<? extends T> forClass) {
+        return (ConversionResolver<T>) ReflectionUtils.findOnClassMap(containerConverterMap, forClass);
+    }
+
+    /**
      * Найти подходящий текущему классу обработчик маппингов
      *
      * @param forClass Класс для поиска обработчика
      * @param <T> тип обработчика
      * @return найденный обработчик или null
      */
-    public <T> ConversionResolver<T> findMappingResolver(Class<? extends T> forClass) {
-        return (ConversionResolver<T>) ReflectionUtils.findOnClassMap(resolversMap, forClass);
+    public <T> ConversionMapper<T> findMapper(Class<? extends T> forClass) {
+        return (ConversionMapper<T>) ReflectionUtils.findOnClassMap(mappersMap, forClass);
     }
 
     /**

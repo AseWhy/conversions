@@ -5,6 +5,7 @@ import io.github.asewhy.conversions.MutatorArgumentResolver;
 import io.github.asewhy.conversions.ResponseMessageHandler;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.method.support.HandlerMethodArgumentResolver;
@@ -14,6 +15,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 import java.util.List;
 
 @Configuration
+@ComponentScan("io.github.asewhy.conversions.defaults")
 public class ConversionSpringAutoconfigure implements WebMvcConfigurer {
     @Autowired
     protected ConversionProvider provider;

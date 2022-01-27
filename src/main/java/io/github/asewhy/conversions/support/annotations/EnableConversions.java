@@ -10,7 +10,7 @@ import java.lang.annotation.*;
 @Documented
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-@Import({ ConversionSpringAutoconfigure.class, ConversionFactoryInternal.class, ConversionProvider.class})
+@Import({ConversionSpringAutoconfigure.class, ConversionFactoryInternal.class, ConversionProvider.class})
 public @interface EnableConversions {
 
 }

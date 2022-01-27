@@ -14,16 +14,14 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 @SuppressWarnings("unchecked")
 public record MutatorArgumentResolver(
     ConversionProvider provider
 ) implements HandlerMethodArgumentResolver {
     @Override
-    public boolean supportsParameter(MethodParameter parameter) {
+    public boolean supportsParameter(@NotNull MethodParameter parameter) {
         return
             parameter.getParameterAnnotation(ConvertMutator.class) != null ||
             parameter.getParameterAnnotation(ConvertRequest.class) != null;
@@ -33,7 +31,7 @@ public record MutatorArgumentResolver(
     public Object resolveArgument(
         @NotNull MethodParameter parameter,
         ModelAndViewContainer mavContainer,
-        NativeWebRequest nativeWebRequest,
+        @NotNull NativeWebRequest nativeWebRequest,
         WebDataBinderFactory binderFactory
     ) throws Exception {
         var factory = provider.getFactory();
@@ -45,21 +43,35 @@ public record MutatorArgumentResolver(
 
             if(parameter.getParameterAnnotation(ConvertMutator.class) != null) {
                 var type = parameter.getParameterType();
-                var parsed = objectMapper.treeToValue(tree, Map.class);
                 var result = objectMapper.treeToValue(tree, type);
 
                 if(result instanceof Collection<?> collection) {
                     var generic = ReflectionUtils.findXGeneric(parameter.getGenericParameterType());
 
                     if(generic != null && factory.getStore().isPresentMutator(generic)) {
+                        var parsedGeneric = (Class<? extends ConversionMutator<?>>) generic;
+                        var ghosts = ReflectionUtils.makeCollectionInstance(type);
+
                         for (var current : collection) {
-                            if (current instanceof ConversionMutator<?> mutator){
-                                provider.createMutator(mutator, parsed);
+                            if (current instanceof HashMap<?, ?> context) {
+                                var mutator = objectMapper.convertValue(context, parsedGeneric);
+                                var castedContext = (Map<String, Object>) context;
+
+                                provider.createMutator(mutator, castedContext);
+
+                                ghosts.add(mutator);
                             }
                         }
+
+                        result = ghosts;
                     }
                 } else {
-                    if (factory.getStore().isPresentMutator(parameter.getParameterType()) && result instanceof ConversionMutator<?> mutator) {
+                    var parsed = objectMapper.treeToValue(tree, Map.class);
+
+                    if (
+                        factory.getStore().isPresentMutator(parameter.getParameterType()) &&
+                        result instanceof ConversionMutator<?> mutator
+                    ) {
                         provider.createMutator(mutator, parsed);
                     }
                 }

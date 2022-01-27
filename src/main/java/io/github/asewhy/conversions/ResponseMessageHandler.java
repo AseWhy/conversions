@@ -1,8 +1,8 @@
 package io.github.asewhy.conversions;
 
 import io.github.asewhy.ReflectionUtils;
-import io.github.asewhy.conversions.support.annotations.ShiftController;
 import io.github.asewhy.conversions.support.annotations.ConvertResponse;
+import io.github.asewhy.conversions.support.annotations.ShiftController;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.converter.HttpMessageConverter;
@@ -13,7 +13,6 @@ import org.springframework.web.servlet.mvc.method.annotation.RequestResponseBody
 
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.List;
 
 public final class ResponseMessageHandler extends RequestResponseBodyMethodProcessor {
@@ -54,12 +53,8 @@ public final class ResponseMessageHandler extends RequestResponseBodyMethodProce
             var converted = (Object) null;
             var mapping = getMappingName(returnType);
 
-            if(canProcess(returnType)) {
-                if (returnValue instanceof Collection<?> collection) {
-                    converted = provider.createResponse(collection, mapping);
-                } else {
-                    converted = provider.createResponse(returnValue, mapping);
-                }
+            if(canProcess(returnType, mapping)) {
+                converted = provider.createResponseResolve(returnValue, mapping);
             } else {
                 converted = returnValue;
             }
@@ -103,17 +98,10 @@ public final class ResponseMessageHandler extends RequestResponseBodyMethodProce
      * @param parameter параметр для обработки
      * @return true если этот обработчик может обработать этот тип
      */
-    private @NotNull Boolean canProcess(@NotNull MethodParameter parameter) {
+    private boolean canProcess(@NotNull MethodParameter parameter, String mapping) {
         var result = parameter.getParameterType();
+        var generic = ReflectionUtils.findXGeneric(parameter.getGenericParameterType());
 
-        if(Collection.class.isAssignableFrom(result)) {
-            var type = parameter.getGenericParameterType();
-
-            if(type instanceof Class<?> typeClass) {
-                result = typeClass;
-            }
-        }
-
-        return provider.getFactory().getStore().isPresentResponse(result);
+        return provider.canResolveResponse(result, generic, mapping);
     }
 }

@@ -8,7 +8,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
@@ -98,23 +97,40 @@ public class ConversionProvider {
     }
 
     /**
-     * Создает ответ из коллекции элементов
+     * Проверить, может ли какой-либо конвертер принять исходный тип и его дженерик
      *
-     * @param from коллекция для создания ответа
-     * @param <L> тип коллекции
-     * @param <T> тип ответа
-     * @param <R> типа, объекта конверсии (исходного объекта)
+     * @param type тип
+     * @param generic generic тип этого типа
+     * @param mapping маппинг
+     * @return true если может
+     */
+    public boolean canResolveResponse(Class<?> type, Class<?> generic, String mapping) {
+        var store = factory.getStore();
+        var resolver = store.findResolver(type);
+
+        if(resolver != null) {
+            return resolver.canProcess(type, generic, this, mapping);
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Создает ответ из конвертируемого элемента
+     *
+     * @param from конвертируемый объект
      * @return конвертированный объект
      */
-    public <L extends Collection<R>, T extends ConversionResponse<R>, R> Collection<T> createResponse(L from, String mapping) {
-        var iterator = from.iterator();
-        var result = new ArrayList<T>();
-
-        while(iterator.hasNext()) {
-            result.add(createResponse(iterator.next(), mapping));
+    public <T> T createResponseResolve(T from, String mapping) {
+        if(from == null) {
+            return null;
         }
 
-        return result;
+        var type = from.getClass();
+        var store = factory.getStore();
+        var resolver = store.findResolver(type);
+
+        return resolver.resolveResponse(from, type, this, mapping);
     }
 
     /**
@@ -155,7 +171,7 @@ public class ConversionProvider {
         var fromClass = ReflectionUtils.skipAnonClasses(from.getClass());
 
         if(applyMappingConversion) {
-            var resolver = (ConversionResolver<Object>) store.findMappingResolver(fromClass);
+            var resolver = (ConversionMapper<Object>) store.findMapper(fromClass);
 
             if(resolver != null) {
                 mapping = resolver.resolveMapping(from, mapping);
