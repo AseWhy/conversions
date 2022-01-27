@@ -59,6 +59,8 @@ public class ConversionStore {
             if(current instanceof ConversionMapper<?> mapper) {
                 this.mappersMap.put(generic, mapper);
             }
+
+            log.info("Initialize conversion mapper for " + generic);
         }
 
         for(var current: resolvers) {
@@ -68,6 +70,8 @@ public class ConversionStore {
             if(current instanceof ConversionResolver<?> resolver) {
                 this.containerConverterMap.put(generic, resolver);
             }
+
+            log.info("Initialize conversion resolver for " + generic);
         }
     }
 
