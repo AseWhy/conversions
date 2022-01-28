@@ -3,7 +3,6 @@ package io.github.asewhy.conversions;
 import io.github.asewhy.ReflectionUtils;
 import io.github.asewhy.conversions.support.CaseUtil;
 import io.github.asewhy.conversions.support.ClassMetadata;
-import io.github.asewhy.conversions.support.annotations.DataResolver;
 import io.github.asewhy.conversions.support.annotations.*;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
@@ -283,7 +282,7 @@ public class ConversionStore {
                     boundType == foundType && (
                         !Collection.class.isAssignableFrom(foundType) || isConventionalCollection(bound, found)
                     ) ||
-                    isConverterOwn(found, boundType) &&
+                    isConverterOwn(bound, foundType) &&
                     ConversionMutator.class.isAssignableFrom(foundType)
                 ) {
                     fieldsFound.put(found, bound);
@@ -325,7 +324,7 @@ public class ConversionStore {
      * @param source значение для преобразования
      * @return true если коллекции можно конвертировать
      */
-    protected boolean isConventionalCollection(Field compare, Field source) {
+    public boolean isConventionalCollection(Field compare, Field source) {
         var requireBeConverter = ReflectionUtils.findXGeneric(source);
 
         if(requireBeConverter == null) {
@@ -354,7 +353,7 @@ public class ConversionStore {
      * @param boundClazz тип целевого поля
      * @return true если истина
      */
-    protected boolean isConverterOwn(Field found, Class<?> boundClazz) {
+    public boolean isConverterOwn(Field found, Class<?> boundClazz) {
         var generic = ReflectionUtils.findXGeneric(boundClazz);
 
         if(generic != null) {
@@ -392,7 +391,7 @@ public class ConversionStore {
      * @param forClass класс для получения биндов
      * @return найденные бинды, или пустая карта
      */
-    protected @NotNull Map<String, ClassMetadata> getResponseBound(Class<?> forClass) {
+    public @NotNull Map<String, ClassMetadata> getResponseBound(Class<?> forClass) {
         var result = responseMap.get(forClass);
 
         if(result == null) {
@@ -409,7 +408,7 @@ public class ConversionStore {
      * @param mapping маппинг для поиска
      * @return найденные бинды, или пустая карта
      */
-    protected @NotNull ClassMetadata getResponseBound(Class<?> forClass, String mapping) {
+    public @NotNull ClassMetadata getResponseBound(Class<?> forClass, String mapping) {
         var source = ReflectionUtils.findOnClassMap(responseMap, forClass);
 
         if(source == null) {
@@ -429,7 +428,7 @@ public class ConversionStore {
      * @param forClass класс для получения биндов
      * @return найденные бинды, или пустая карта
      */
-    protected @NotNull ClassMetadata getMutatorBound(Class<?> forClass) {
+    public @NotNull ClassMetadata getMutatorBound(Class<?> forClass) {
         var result = this.mutatorsMap.get(forClass);
 
         if(result == null) {

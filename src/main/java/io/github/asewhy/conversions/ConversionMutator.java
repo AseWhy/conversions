@@ -39,7 +39,13 @@ public abstract class ConversionMutator<T> {
     }
 
     /**
-     * Заполняет родительскую сущность для сущности T
+     * Заполняет родительскую сущность для сущности
+     *
+     * Вызывается перед fill для вложенных сущностей
+     *
+     * Сначала заполняет родительская сущность, т.к. если заполнять родителей после заполнения
+     * основной сущности получается так что родитель одной сущности заполнен, а родитель родителя
+     * текущей сущности ещё не определен
      *
      * @param fill объект заполнения
      * @param parent родительская сущность
@@ -124,8 +130,8 @@ public abstract class ConversionMutator<T> {
                                 exists = ReflectionUtils.safeInstance(boundType);
                             }
 
-                            mutator.fill(exists, context);
                             mutator.fillParent(exists, fill);
+                            mutator.fill(exists, context);
 
                             received = exists;
                         }
@@ -168,8 +174,8 @@ public abstract class ConversionMutator<T> {
                                             }
                                         }
 
-                                        mutator.fill(existsItem, context);
                                         mutator.fillParent(existsItem, fill);
+                                        mutator.fill(existsItem, context);
                                     }
                                 }
 
