@@ -1,5 +1,7 @@
 package io.github.asewhy.conversions;
 
+import java.lang.reflect.Method;
+
 /**
  * Для списков, карт, и других контейнеров данных нужно конвертировать данные
  *
@@ -22,6 +24,13 @@ public abstract class ConversionResolver<T> {
      * @return true если может
      */
     protected abstract boolean canProcess(Class<?> from, Class<?> generic, ConversionProvider provider, String mapping);
+
+    /**
+     * Получить класс, в который по итогу будет преобразован ответ (может использоваться при документировании)
+     *
+     * @return класс в который конвертируется ответ
+     */
+    public abstract Class<?> getConversionReference(Method from);
 
     /**
      * Произвести преобразование типа T

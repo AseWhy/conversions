@@ -7,11 +7,12 @@ import io.github.asewhy.conversions.support.annotations.DataResolver;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
+import java.lang.reflect.Method;
 import java.util.Collection;
 
 @Component
 @DataResolver
-@SuppressWarnings("unchecked")
+@SuppressWarnings({"unchecked", "unused"})
 public class CollectionResponseResolver extends ConversionResolver<Collection<?>> {
     @Override
     public Collection<?> resolveInternalResponse(@NotNull Collection<?> from, Class<? extends Collection<?>> type, ConversionProvider provider, String mapping) {
@@ -31,6 +32,17 @@ public class CollectionResponseResolver extends ConversionResolver<Collection<?>
             return provider.getFactory().getStore().isPresentResponse(generic);
         } else {
             return false;
+        }
+    }
+
+    @Override
+    public Class<?> getConversionReference(@NotNull Method from) {
+        var type = from.getReturnType();
+
+        if(Collection.class.isAssignableFrom(type)) {
+            return ReflectionUtils.findXGeneric(from);
+        } else {
+            return null;
         }
     }
 }
