@@ -12,6 +12,7 @@ import org.springframework.context.annotation.ClassPathScanningCandidateComponen
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -200,7 +201,15 @@ public class ConversionStore {
             var found = current.getValue();
             var bound = boundFields.get(current.getKey());
 
+            if(Modifier.isStatic(found.getModifiers())){
+                continue;
+            }
+
             if(bound != null) {
+                if(Modifier.isStatic(bound.getModifiers())){
+                    continue;
+                }
+
                 var foundType = found.getType();
                 var boundType = bound.getType();
 
@@ -224,7 +233,15 @@ public class ConversionStore {
             var field = current.getValue();
             var setter = boundMethods.get("set" + CaseUtil.toPascalCase(current.getKey()));
 
+            if(Modifier.isStatic(field.getModifiers())){
+                continue;
+            }
+
             if(setter != null) {
+                if(Modifier.isStatic(setter.getModifiers())){
+                    continue;
+                }
+
                 var parameters = setter.getParameterTypes();
 
                 if(parameters.length > 0 && parameters[0] == field.getType()) {
@@ -239,7 +256,15 @@ public class ConversionStore {
             var field = current.getValue();
             var getter = foundMethods.get("get" + CaseUtil.toPascalCase(current.getKey()));
 
+            if(Modifier.isStatic(field.getModifiers())){
+                continue;
+            }
+
             if(getter != null && getter.getReturnType().isAssignableFrom(field.getType())) {
+                if(Modifier.isStatic(getter.getModifiers())){
+                    continue;
+                }
+
                 fieldsGetters.put(field, getter);
             }
         }
@@ -274,7 +299,15 @@ public class ConversionStore {
             var found = current.getValue();
             var bound = boundFields.get(current.getKey());
 
+            if(Modifier.isStatic(found.getModifiers())){
+                continue;
+            }
+
             if(bound != null) {
+                if(Modifier.isStatic(bound.getModifiers())){
+                    continue;
+                }
+
                 var foundType = found.getType();
                 var boundType = bound.getType();
 
@@ -298,7 +331,15 @@ public class ConversionStore {
             var field = current.getValue();
             var setter = boundMethods.get("set" + CaseUtil.toPascalCase(current.getKey()));
 
+            if(Modifier.isStatic(field.getModifiers())){
+                continue;
+            }
+
             if(setter != null) {
+                if(Modifier.isStatic(setter.getModifiers())){
+                    continue;
+                }
+
                 fieldsSetters.put(field, setter);
             }
 
@@ -309,7 +350,15 @@ public class ConversionStore {
             var field = current.getValue();
             var getter = foundMethods.get("get" + CaseUtil.toPascalCase(current.getKey()));
 
+            if(Modifier.isStatic(field.getModifiers())){
+                continue;
+            }
+
             if(getter != null && getter.getReturnType().isAssignableFrom(field.getType())) {
+                if(Modifier.isStatic(getter.getModifiers())){
+                    continue;
+                }
+
                 fieldsGetters.put(field, getter);
             }
         }
