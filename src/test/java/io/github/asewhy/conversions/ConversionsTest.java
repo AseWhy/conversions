@@ -31,10 +31,13 @@ public class ConversionsTest {
     @Test
     public void testConversionUtils() {
         var map = new HashMap<Class<?>, Integer>();
+
         map.put(C.class, 2);
         map.put(A.class, 0);
         map.put(B.class, 1);
+
         var result = ReflectionUtils.findOnClassMap(map, D.class);
+
         Assertions.assertThat(result).isEqualTo(2);
     }
 

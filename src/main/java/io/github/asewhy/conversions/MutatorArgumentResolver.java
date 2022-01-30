@@ -46,7 +46,7 @@ public record MutatorArgumentResolver(
                 var result = objectMapper.treeToValue(tree, type);
 
                 if(result instanceof Collection<?> collection) {
-                    var generic = ReflectionUtils.findXGeneric(parameter.getGenericParameterType());
+                    var generic = ReflectionUtils.findXGeneric(parameter.getGenericParameterType(), 0);
 
                     if(generic != null && factory.getStore().isPresentMutator(generic)) {
                         var parsedGeneric = (Class<? extends ConversionMutator<?>>) generic;

@@ -1,6 +1,5 @@
 package io.github.asewhy.conversions;
 
-import io.github.asewhy.ReflectionUtils;
 import io.github.asewhy.conversions.support.annotations.ConvertResponse;
 import io.github.asewhy.conversions.support.annotations.ShiftController;
 import lombok.extern.log4j.Log4j2;
@@ -102,13 +101,12 @@ public final class ResponseMessageHandler extends RequestResponseBodyMethodProce
      */
     private boolean canProcess(@NotNull MethodParameter parameter, String mapping) {
         var result = parameter.getParameterType();
-        var generic = ReflectionUtils.findXGeneric(parameter.getGenericParameterType());
         var store = provider.getFactory().getStore();
 
         if(store.isPresentResponse(result)) {
             return true;
         } else {
-            return provider.canResolveResponse(result, generic, mapping);
+            return provider.canResolveResponse(result, parameter.getGenericParameterType(), mapping);
         }
     }
 }

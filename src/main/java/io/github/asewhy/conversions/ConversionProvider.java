@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Type;
 import java.util.Collection;
 import java.util.Map;
 
@@ -104,12 +105,12 @@ public class ConversionProvider {
      * @param mapping маппинг
      * @return true если может
      */
-    public boolean canResolveResponse(Class<?> type, Class<?> generic, String mapping) {
+    public boolean canResolveResponse(Class<?> type, Type generics, String mapping) {
         var store = factory.getStore();
         var resolver = store.findResolver(type);
 
         if(resolver != null) {
-            return resolver.canProcess(type, generic, this, mapping);
+            return resolver.canProcess(type, generics, this, mapping);
         } else {
             return false;
         }

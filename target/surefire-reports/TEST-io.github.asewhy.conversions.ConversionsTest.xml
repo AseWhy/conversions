@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<testsuite tests="3" failures="0" name="io.github.asewhy.conversions.ConversionsTest" time="0.412" errors="0" skipped="0">
+<testsuite tests="3" failures="0" name="io.github.asewhy.conversions.ConversionsTest" time="0.641" errors="0" skipped="0">
   <properties>
-    <property name="idea.version" value="2021.3.1"/>
+    <property name="idea.version" value="2021.3.2"/>
     <property name="java.runtime.name" value="OpenJDK Runtime Environment"/>
     <property name="java.vm.version" value="17.0.1+12-39"/>
     <property name="sun.boot.library.path" value="/home/astecom/.jdks/openjdk-17.0.1/lib"/>
@@ -23,11 +23,11 @@
 "/>
     <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
     <property name="os.name" value="Linux"/>
-    <property name="maven.ext.class.path" value="/snap/intellij-idea-community/342/plugins/maven/lib/maven-event-listener.jar"/>
-    <property name="classworlds.conf" value="/snap/intellij-idea-community/342/plugins/maven/lib/maven3/bin/m2.conf"/>
+    <property name="maven.ext.class.path" value="/snap/intellij-idea-community/345/plugins/maven/lib/maven-event-listener.jar"/>
+    <property name="classworlds.conf" value="/snap/intellij-idea-community/345/plugins/maven/lib/maven3/bin/m2.conf"/>
     <property name="sun.jnu.encoding" value="UTF-8"/>
     <property name="java.library.path" value="/usr/java/packages/lib:/usr/lib64:/lib64:/lib:/usr/lib"/>
-    <property name="maven.conf" value="/snap/intellij-idea-community/342/plugins/maven/lib/maven3/conf"/>
+    <property name="maven.conf" value="/snap/intellij-idea-community/345/plugins/maven/lib/maven3/conf"/>
     <property name="jdk.debug" value="release"/>
     <property name="java.class.version" value="61.0"/>
     <property name="java.specification.name" value="Java Platform API Specification"/>
@@ -38,10 +38,10 @@
     <property name="file.encoding" value="UTF-8"/>
     <property name="java.specification.version" value="17"/>
     <property name="user.name" value="astecom"/>
-    <property name="java.class.path" value="/snap/intellij-idea-community/342/plugins/maven/lib/maven3/boot/plexus-classworlds-2.6.0.jar:/snap/intellij-idea-community/342/plugins/maven/lib/maven3/boot/plexus-classworlds.license"/>
+    <property name="java.class.path" value="/snap/intellij-idea-community/345/plugins/maven/lib/maven3/boot/plexus-classworlds-2.6.0.jar:/snap/intellij-idea-community/345/plugins/maven/lib/maven3/boot/plexus-classworlds.license"/>
     <property name="java.vm.specification.version" value="17"/>
     <property name="sun.arch.data.model" value="64"/>
-    <property name="sun.java.command" value="org.codehaus.classworlds.Launcher -Didea.version=2021.3.1 deploy"/>
+    <property name="sun.java.command" value="org.codehaus.classworlds.Launcher -Didea.version=2021.3.2 deploy"/>
     <property name="java.home" value="/home/astecom/.jdks/openjdk-17.0.1"/>
     <property name="user.language" value="ru"/>
     <property name="java.specification.vendor" value="Oracle Corporation"/>
@@ -50,14 +50,14 @@
     <property name="native.encoding" value="UTF-8"/>
     <property name="securerandom.source" value="file:/dev/./urandom"/>
     <property name="java.vendor" value="Oracle Corporation"/>
-    <property name="maven.home" value="/snap/intellij-idea-community/342/plugins/maven/lib/maven3"/>
+    <property name="maven.home" value="/snap/intellij-idea-community/345/plugins/maven/lib/maven3"/>
     <property name="file.separator" value="/"/>
     <property name="java.version.date" value="2021-10-19"/>
     <property name="java.vendor.url.bug" value="https://bugreport.java.com/bugreport/"/>
     <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
     <property name="sun.cpu.endian" value="little"/>
   </properties>
-  <testcase classname="io.github.asewhy.conversions.ConversionsTest" name="testConversionUtils" time="0.378"/>
-  <testcase classname="io.github.asewhy.conversions.ConversionsTest" name="conversionsTest" time="0.032"/>
-  <testcase classname="io.github.asewhy.conversions.ConversionsTest" name="conversionMapResponse" time="0.002"/>
+  <testcase classname="io.github.asewhy.conversions.ConversionsTest" name="testConversionUtils" time="0.602"/>
+  <testcase classname="io.github.asewhy.conversions.ConversionsTest" name="conversionsTest" time="0.033"/>
+  <testcase classname="io.github.asewhy.conversions.ConversionsTest" name="conversionMapResponse" time="0.006"/>
 </testsuite>
