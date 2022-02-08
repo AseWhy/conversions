@@ -5,6 +5,7 @@ import io.github.asewhy.conversions.support.annotations.ShiftController;
 import lombok.extern.log4j.Log4j2;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.core.MethodParameter;
+import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.web.HttpMediaTypeNotAcceptableException;
 import org.springframework.web.context.request.NativeWebRequest;
@@ -71,23 +72,23 @@ public final class ResponseMessageHandler extends RequestResponseBodyMethodProce
      * @return маппинг
      */
     private String getMappingName(@NotNull MethodParameter parameter) {
-        var annotation = parameter.getParameterAnnotation(ConvertResponse.class);
+        var method = parameter.getMethod();
+
+        if(method == null) {
+            return ConversionUtils.COMMON_MAPPING;
+        }
+
+        var annotation = AnnotationUtils.findAnnotation(method, ConvertResponse.class);
         var annotatedClass = parameter.getContainingClass();
 
         if(annotation != null) {
             return annotation.mapping();
         }
 
-        annotation = annotatedClass.getAnnotation(ConvertResponse.class);
+        annotation = AnnotationUtils.findAnnotation(parameter.getDeclaringClass() , ConvertResponse.class);
 
         if(annotation != null) {
             return annotation.mapping();
-        }
-
-        var controller = annotatedClass.getAnnotation(ShiftController.class);
-
-        if(controller != null) {
-            return controller.mapping();
         }
 
         return ConversionUtils.COMMON_MAPPING;
