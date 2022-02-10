@@ -32,8 +32,9 @@ public class ConversionFactoryInternal {
         this.conversionExcludes = factory.provideExcludes();
         this.objectMapper = factory.provideObjectMapper().copy();
         this.callbackNameStrategy = new CallbackNameStrategy(this.convertFieldName, this.conversionExcludes);
-        this.objectMapper.setPropertyNamingStrategy(this.callbackNameStrategy);
         this.store = factory.provideStore();
         this.factory = factory;
+
+        this.objectMapper.setPropertyNamingStrategy(this.callbackNameStrategy);
     }
 }
