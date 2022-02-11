@@ -56,8 +56,8 @@ public class ConversionStore {
             var type = current.getClass();
             var generic = ReflectionUtils.findXGeneric(type);
 
-            if(current instanceof ConversionMapper<?> mapper) {
-                this.mappersMap.put(generic, mapper);
+            if(current instanceof ConversionMapper<?>) {
+                this.mappersMap.put(generic, (ConversionMapper<?>) current);
             }
 
             log.info("Initialize conversion mapper for " + generic);
@@ -67,8 +67,8 @@ public class ConversionStore {
             var type = current.getClass();
             var generic = ReflectionUtils.findXGeneric(type);
 
-            if(current instanceof ConversionResolver<?> resolver) {
-                this.containerConverterMap.put(generic, resolver);
+            if(current instanceof ConversionResolver<?>) {
+                this.containerConverterMap.put(generic, (ConversionResolver<?>) current);
             }
 
             log.info("Initialize conversion resolver for " + generic);

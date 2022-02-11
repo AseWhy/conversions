@@ -80,7 +80,9 @@ public class ConversionsTest {
 
         System.out.println("TOOK " + timeSkip + " (ms)");
 
-        if(result instanceof ExampleTestBookResponseConverter bookResponse) {
+        if(result instanceof ExampleTestBookResponseConverter) {
+            var bookResponse = (ExampleTestBookResponseConverter) result;
+
             Assertions.assertThat(timeSkip).isLessThan(10);
             Assertions.assertThat(bookResponse.getAuthors()).hasSize(20);
             Assertions.assertThat(bookResponse.getPageCount()).isEqualTo(200L);

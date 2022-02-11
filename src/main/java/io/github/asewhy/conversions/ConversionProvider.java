@@ -66,17 +66,19 @@ public class ConversionProvider {
                 }
 
                 if (
-                    found instanceof ConversionMutator<?> foundMutator &&
-                    foundMutator.getClass() != clazz &&
-                    mirrorValue instanceof Map<?, ?> map
+                    found instanceof ConversionMutator<?> &&
+                    found.getClass() != clazz &&
+                    mirrorValue instanceof Map<?, ?>
                 ) {
-                    createMutator(foundMutator, (Map<String, Object>) map);
+                    createMutator((ConversionMutator<?>) found, (Map<String, Object>) mirrorValue);
                 }
 
-                if (found instanceof Collection<?> collection) {
+                if (found instanceof Collection<?> ) {
+                    var collection = (Collection<?>) found;
                     var foundIterator = collection.iterator();
 
-                    if (mirrorValue instanceof Collection<?> receivedCollection) {
+                    if (mirrorValue instanceof Collection<?>) {
+                        var receivedCollection = (Collection<?>) mirrorValue;
                         var mirrorIterator = receivedCollection.iterator();
 
                         if (foundIterator.hasNext() && mirrorIterator.hasNext()) {
@@ -84,11 +86,11 @@ public class ConversionProvider {
                             var currentMirror = mirrorIterator.next();
 
                             if (
-                                currentFound instanceof ConversionMutator<?> foundMutator &&
-                                foundMutator.getClass() != clazz &&
-                                currentMirror instanceof Map<?, ?> map
+                                currentFound instanceof ConversionMutator<?> &&
+                                currentFound.getClass() != clazz &&
+                                currentMirror instanceof Map<?, ?>
                             ) {
-                                createMutator(foundMutator, (Map<String, Object>) map);
+                                createMutator((ConversionMutator<?>) currentFound, (Map<String, Object>) currentMirror);
                             }
                         }
                     }
@@ -101,7 +103,7 @@ public class ConversionProvider {
      * Проверить, может ли какой-либо конвертер принять исходный тип и его дженерик
      *
      * @param type тип
-     * @param generic generic тип этого типа
+     * @param generics generic тип этого типа
      * @param mapping маппинг
      * @return true если может
      */
@@ -216,7 +218,9 @@ public class ConversionProvider {
         //
         // Перебираю поля, с совпадающими типами
         //
-        if(metadata.getIsMap() && from instanceof Map map) {
+        if(metadata.getIsMap() && from instanceof Map) {
+            var map = (Map<?, ?>) from;
+
             for(var bound: metadata.getBoundFields()) {
                 result = map.containsKey(bound.getName()) ? map.get(bound.getName()) : map.get(factory.convertFieldName(bound.getName()));
 
@@ -228,7 +232,8 @@ public class ConversionProvider {
                         result = createResponse(result, getEntityMapping(boundType), applyMappingConversion);
                     }
 
-                    if(result instanceof Collection<?> collection) {
+                    if(result instanceof Collection<?>) {
+                        var collection = (Collection<?>) result;
                         var tempArray = ReflectionUtils.makeCollectionInstance(foundType);
                         var boundGeneric = ReflectionUtils.findXGeneric(bound);
                         var isBoundedArray = boundGeneric != null && ConversionResponse.class.isAssignableFrom(boundGeneric);
@@ -292,7 +297,8 @@ public class ConversionProvider {
                         result = createResponse(result, getEntityMapping(boundType), applyMappingConversion);
                     }
 
-                    if(result instanceof Collection<?> collection) {
+                    if(result instanceof Collection<?>) {
+                        var collection = (Collection<?>) result;
                         var tempArray = ReflectionUtils.makeCollectionInstance(foundType);
                         var boundGeneric = ReflectionUtils.findXGeneric(bound);
                         var isBoundedArray = boundGeneric != null && ConversionResponse.class.isAssignableFrom(boundGeneric);

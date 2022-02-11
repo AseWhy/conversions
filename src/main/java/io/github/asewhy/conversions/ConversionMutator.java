@@ -125,10 +125,12 @@ public abstract class ConversionMutator<T> {
                     if(received != null) {
                         var exists = ReflectionUtils.safeAccess(bound, fill);
 
-                        if(received instanceof ConversionMutator mutator && requireProcessNested(found, mutator)) {
+                        if(received instanceof ConversionMutator && requireProcessNested(found, received)) {
                             if(exists == null) {
                                 exists = ReflectionUtils.safeInstance(boundType);
                             }
+
+                            var mutator = (ConversionMutator<Object>) received;
 
                             mutator.fillParent(exists, fill);
                             mutator.fill(exists, context);
@@ -136,7 +138,8 @@ public abstract class ConversionMutator<T> {
                             received = exists;
                         }
 
-                        if(received instanceof Collection<?> foundCollection && requireProcessNested(found, foundCollection)) {
+                        if(received instanceof Collection<?> && requireProcessNested(found, received)) {
+                            var foundCollection = (Collection<?>) received;
                             var foundSubtype = ReflectionUtils.findXGeneric(found);
                             var boundSubtype = ReflectionUtils.findXGeneric(bound);
                             var foundIdField = ReflectionUtils.findTypeId(foundSubtype);
@@ -157,7 +160,8 @@ public abstract class ConversionMutator<T> {
                                 boundCollection.removeIf(e -> !foundMap.containsKey(ReflectionUtils.safeAccess(boundIdField, e)));
 
                                 for(var item: foundCollection) {
-                                    if(item instanceof ConversionMutator mutator) {
+                                    if(item instanceof ConversionMutator) {
+                                        var mutator = (ConversionMutator<Object>) item;
                                         var mutatorId = ReflectionUtils.safeAccess(foundIdField, mutator);
                                         var existsItem = existsMap.get(mutatorId);
 
@@ -184,8 +188,8 @@ public abstract class ConversionMutator<T> {
                         }
                     }
 
-                    if(fill instanceof Map map) {
-                        map.put(found.getName(), received);
+                    if(fill instanceof Map) {
+                        ((Map<Object, Object>) fill).put(found.getName(), received);
                     } else if(boundSetters.containsKey(bound)) {
                         ReflectionUtils.safeInvoke(boundSetters.get(bound), fill, received);
                     } else {

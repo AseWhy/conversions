@@ -3,6 +3,7 @@ package io.github.asewhy.conversions;
 import io.github.asewhy.ReflectionUtils;
 import io.github.asewhy.conversions.support.annotations.ConvertMutator;
 import io.github.asewhy.conversions.support.annotations.ConvertRequest;
+import lombok.AllArgsConstructor;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.core.MethodParameter;
@@ -17,9 +18,10 @@ import javax.validation.Valid;
 import java.util.*;
 
 @SuppressWarnings("unchecked")
-public record MutatorArgumentResolver(
-    ConversionProvider provider
-) implements HandlerMethodArgumentResolver {
+@AllArgsConstructor
+public class MutatorArgumentResolver implements HandlerMethodArgumentResolver {
+    private final ConversionProvider provider;
+
     @Override
     public boolean supportsParameter(@NotNull MethodParameter parameter) {
         return
@@ -45,7 +47,8 @@ public record MutatorArgumentResolver(
                 var type = parameter.getParameterType();
                 var result = objectMapper.treeToValue(tree, type);
 
-                if(result instanceof Collection<?> collection) {
+                if(result instanceof Collection<?>) {
+                    var collection = (Collection<?>) result;
                     var generic = ReflectionUtils.findXGeneric(parameter.getGenericParameterType(), 0);
 
                     if(generic != null && factory.getStore().isPresentMutator(generic)) {
@@ -53,7 +56,8 @@ public record MutatorArgumentResolver(
                         var ghosts = ReflectionUtils.makeCollectionInstance(type);
 
                         for (var current : collection) {
-                            if (current instanceof HashMap<?, ?> context) {
+                            if (current instanceof HashMap<?, ?>) {
+                                var context = (Map<?, ?>) current;
                                 var mutator = objectMapper.convertValue(context, parsedGeneric);
                                 var castedContext = (Map<String, Object>) context;
 
@@ -70,9 +74,9 @@ public record MutatorArgumentResolver(
 
                     if (
                         factory.getStore().isPresentMutator(parameter.getParameterType()) &&
-                        result instanceof ConversionMutator<?> mutator
+                        result instanceof ConversionMutator<?>
                     ) {
-                        provider.createMutator(mutator, parsed);
+                        provider.createMutator((ConversionMutator<?>) result, parsed);
                     }
                 }
 
