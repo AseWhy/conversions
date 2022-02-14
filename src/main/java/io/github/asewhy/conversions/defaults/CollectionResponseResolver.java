@@ -27,6 +27,11 @@ public class CollectionResponseResolver extends ConversionResolver<Collection<?>
     }
 
     @Override
+    protected Class<?> extractInternalExample(@NotNull Collection<?> from, String mapping, Object globalContextOrPassedContext) {
+        return from.stream().map(Object::getClass).findFirst().orElse(null);
+    }
+
+    @Override
     protected boolean canProcess(Class<?> from, Type generics, ConversionProvider provider, String mapping) {
         return Collection.class.isAssignableFrom(from);
     }

@@ -26,6 +26,7 @@ public class ConversionStore {
     private final Map<Class<?>, Map<String, ClassMetadata>> responseMap = new HashMap<>();
     private final Map<Class<?>, ConversionMapper<?>> mappersMap = new HashMap<>();
     private final Map<Class<?>, ConversionResolver<?>> containerConverterMap = new HashMap<>();
+    private final Map<Class<?>, ConversionContextRecipient<?, ?>> contextRecipientMap = new HashMap<>();
 
     /**
      * Создать экземпляр стора
@@ -51,6 +52,7 @@ public class ConversionStore {
     public void loadContext(@NotNull ApplicationContext context) {
         var mappers = context.getBeansWithAnnotation(DataMapper.class).values();
         var resolvers = context.getBeansWithAnnotation(DataResolver.class).values();
+        var recipients = context.getBeansWithAnnotation(ContextRecipient.class).values();
 
         for(var current: mappers) {
             var type = current.getClass();
@@ -72,6 +74,17 @@ public class ConversionStore {
             }
 
             log.info("Initialize conversion resolver for " + generic);
+        }
+
+        for(var current: recipients) {
+            var type = current.getClass();
+            var generic = ReflectionUtils.findXGeneric(type, 0);
+
+            if(current instanceof ConversionContextRecipient<?, ?>) {
+                this.contextRecipientMap.put(generic, (ConversionContextRecipient<?, ?>) current);
+            }
+
+            log.info("Initialize conversion context recipients for " + generic);
         }
     }
 
@@ -432,6 +445,17 @@ public class ConversionStore {
      */
     public <T> ConversionMapper<T> findMapper(Class<? extends T> forClass) {
         return (ConversionMapper<T>) ReflectionUtils.findOnClassMap(mappersMap, forClass);
+    }
+
+    /**
+     * йти подходящий текущему классу получатель контекста
+     *
+     * @param <T> тип получателя
+     * @param forClass Класс для поиска получателя
+     * @return найденный обработчик или null
+     */
+    public <T extends ConversionResponse<?>, C> ConversionContextRecipient<T, C> findContextRecipient(Class<?> forClass) {
+        return (ConversionContextRecipient<T, C>) ReflectionUtils.findOnClassMap(contextRecipientMap, forClass);
     }
 
     /**

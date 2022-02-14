@@ -53,7 +53,6 @@ public class ConversionsTest {
         var timeSkip = System.currentTimeMillis() - stamp;
 
         System.out.println("TOOK " + timeSkip + " (ms)");
-        System.out.println(result);
     }
 
     @Test

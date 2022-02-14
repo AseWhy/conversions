@@ -4,8 +4,10 @@ io/github/asewhy/conversions/defaults/CollectionResponseResolver.class
 io/github/asewhy/conversions/support/annotations/ConvertMutator.class
 io/github/asewhy/conversions/support/annotations/EnableConversions.class
 io/github/asewhy/conversions/ConversionContextResponse.class
+io/github/asewhy/conversions/ConversionContextRecipient.class
 io/github/asewhy/conversions/ConversionFactoryInternal.class
 io/github/asewhy/conversions/ResponseMessageHandler.class
+io/github/asewhy/conversions/support/annotations/ContextRecipient.class
 io/github/asewhy/conversions/support/annotations/DataMapper.class
 io/github/asewhy/conversions/support/annotations/MutatorExcludes.class
 io/github/asewhy/conversions/support/ClassMetadata.class

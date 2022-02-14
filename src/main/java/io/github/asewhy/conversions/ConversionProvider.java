@@ -5,6 +5,7 @@ import io.github.asewhy.conversions.builders.MutatorObjectBuilder;
 import io.github.asewhy.conversions.support.annotations.ResponseDTO;
 import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.stereotype.Service;
 
 import java.lang.reflect.InvocationTargetException;
@@ -122,21 +123,52 @@ public class ConversionProvider {
      * Создает ответ из конвертируемого элемента
      *
      * @param from конвертируемый объект
+     * @param mapping исходный маппинг
      * @return конвертированный объект
      */
     public Object createResponseResolve(Object from, String mapping) {
+        return createResponseResolve(from, mapping, null);
+    }
+
+    /**
+     * Создает ответ из конвертируемого элемента
+     *
+     * @param from конвертируемый объект
+     * @param mapping исходный маппинг
+     * @param context поставляемый конвертируемый контекст
+     * @return конвертированный объект
+     */
+    public Object createResponseResolve(Object from, String mapping, Object context) {
         if(from == null) {
             return null;
         }
 
-        var type = from.getClass();
+        var providedContext = factory.getFactory().provideContext();
+        var castedContext = context != null ? context : providedContext;
+        var type = ReflectionUtils.skipAnonClasses(from.getClass());
         var store = factory.getStore();
         var resolver = store.findResolver(type);
 
         if(resolver != null) {
-            return resolver.resolveResponse(from, type, this, mapping);
+            var example = resolver.extractExample(resolver, mapping, castedContext);
+
+            if(example != null) {
+                var recipient = store.findContextRecipient(example);
+
+                if(recipient != null) {
+                    castedContext = recipient.mapContext(from);
+                }
+            }
+
+            return resolver.resolveResponse(from, type, this, mapping, castedContext);
         } else {
-            return createResponse(from, mapping);
+            var recipient = store.findContextRecipient(type);
+
+            if(recipient != null) {
+                castedContext = recipient.mapContext(from);
+            }
+
+            return createResponse(from, mapping, castedContext);
         }
     }
 
@@ -148,28 +180,44 @@ public class ConversionProvider {
      * @param <R> тип сущности, из которой будет создана сущность ответа
      */
     public <T extends ConversionResponse<R>, R> T createResponse(R from) {
-        return createResponse(from, ConversionUtils.COMMON_MAPPING, true);
+        return createResponse(from, ConversionUtils.COMMON_MAPPING, true, null);
     }
 
     /**
      * Создать ответ из сущности from
      *
      * @param from исходная сущность для создания ответа
+     * @param mapping исходный маппинг
      * @param <T> тип сущности ответа
      * @param <R> тип сущности, из которой будет создана сущность ответа
      */
     public <T extends ConversionResponse<R>, R> T createResponse(R from, String mapping) {
-        return createResponse(from, mapping, true);
+        return createResponse(from, mapping, true, null);
     }
 
     /**
      * Создать ответ из сущности from
      *
      * @param from исходная сущность для создания ответа
+     * @param mapping исходный маппинг
+     * @param context поставляемый конвертируемый контекст
      * @param <T> тип сущности ответа
      * @param <R> тип сущности, из которой будет создана сущность ответа
      */
-    public <T extends ConversionResponse<R>, R> T createResponse(R from, String mapping, Boolean applyMappingConversion) {
+    public <T extends ConversionResponse<R>, R> T createResponse(R from, String mapping, Object context) {
+        return createResponse(from, mapping, true, context);
+    }
+
+    /**
+     * Создать ответ из сущности from
+     *
+     * @param from исходная сущность для создания ответа
+     * @param mapping исходный маппинг
+     * @param context поставляемый конвертируемый контекст
+     * @param <T> тип сущности ответа
+     * @param <R> тип сущности, из которой будет создана сущность ответа
+     */
+    public <T extends ConversionResponse<R>, R> T createResponse(R from, String mapping, Boolean applyMappingConversion, Object context) {
         if(from == null) {
             return null;
         }
@@ -294,7 +342,7 @@ public class ConversionProvider {
                     boundType = bound.getType();
 
                     if(ConversionResponse.class.isAssignableFrom(boundType)) {
-                        result = createResponse(result, getEntityMapping(boundType), applyMappingConversion);
+                        result = createResponse(result, getEntityMapping(boundType), applyMappingConversion, context);
                     }
 
                     if(result instanceof Collection<?>) {
@@ -309,7 +357,7 @@ public class ConversionProvider {
                             }
 
                             if(isBoundedArray) {
-                                tempArray.add(createResponse(item, getEntityMapping(boundGeneric), applyMappingConversion));
+                                tempArray.add(createResponse(item, getEntityMapping(boundGeneric), applyMappingConversion, context));
                             } else {
                                 tempArray.add(item);
                             }
@@ -327,7 +375,7 @@ public class ConversionProvider {
             }
         }
 
-        instance.fillInternal(from, this, factory.provideContext());
+        instance.fillInternal(from, this, context != null ? context : factory.provideContext());
 
         return instance;
     }
@@ -341,7 +389,7 @@ public class ConversionProvider {
      */
     public String getEntityMapping(Class<?> clazz) {
         if(ConversionResponse.class.isAssignableFrom(clazz)) {
-            var annotation = clazz.getAnnotation(ResponseDTO.class);
+            var annotation = AnnotationUtils.findAnnotation(clazz, ResponseDTO.class);
 
             if(annotation != null) {
                 return annotation.mapping();

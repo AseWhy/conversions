@@ -79,7 +79,6 @@ public final class ResponseMessageHandler extends RequestResponseBodyMethodProce
         }
 
         var annotation = AnnotationUtils.findAnnotation(method, ConvertResponse.class);
-        var annotatedClass = parameter.getContainingClass();
 
         if(annotation != null) {
             return annotation.mapping();
