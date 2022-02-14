@@ -16,7 +16,7 @@ public abstract class ConversionContextResponse<T, C> extends ConversionResponse
     }
 
     protected void fillPureInternal(T fill, ConversionProvider provider, C castedContext) {
-        // Do something here...
+        fillPureInternal(fill, castedContext);
     }
 
     @Override
