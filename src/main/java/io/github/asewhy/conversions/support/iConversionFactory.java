@@ -37,6 +37,15 @@ public interface iConversionFactory {
     }
 
     /**
+     * Должен возвращать TRUE, если нужен вывод отладочной информации
+     *
+     * @return true если нужен вывод отладочной информации
+     */
+    default Boolean isDebug() {
+        return false;
+    }
+
+    /**
      * Поставщик исключений для convertFieldName, в случае совпадения типа поля или метода геттера, будет использоваться чистое имя
      * поля, или чистое значение jsonProperty
      *

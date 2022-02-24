@@ -22,9 +22,11 @@ public class ConversionFactoryInternal {
     private final ObjectMapper objectMapper;
     private final ConversionStore store;
     private final Function<String, String> convertFieldName;
-    private final iConversionFactory factory;
     private final Map<Class<?>, Set<String>> conversionExcludes;
     private final CallbackNameStrategy callbackNameStrategy;
+
+    @NotNull
+    private final iConversionFactory factory;
 
     @Autowired
     public ConversionFactoryInternal(@NotNull iConversionFactory factory) {
