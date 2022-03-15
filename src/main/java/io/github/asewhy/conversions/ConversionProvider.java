@@ -53,14 +53,14 @@ public class ConversionProvider {
 
         var founds = metadata.getFoundFields();
 
+        from.touchedFields.addAll(mirror.keySet());
+
         for (var current : founds) {
             var jsonName = factory.convertFieldName(current.getName());
 
             if (mirror.containsKey(jsonName)) {
                 var mirrorValue = mirror.get(jsonName);
                 var found = ReflectionUtils.safeAccess(current, from);
-
-                from.touchedFields.add(jsonName);
 
                 if(metadata.getIsMap()) {
                     continue;
@@ -150,7 +150,7 @@ public class ConversionProvider {
         var resolver = store.findResolver(type);
 
         if(resolver != null) {
-            var example = resolver.extractExample(resolver, mapping, castedContext);
+            var example = resolver.extractExample(from, mapping, castedContext);
 
             if(example != null) {
                 var recipient = store.findContextRecipient(example);
