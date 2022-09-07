@@ -1,1 +1,0 @@
-packageSearchIndex = [{"l":"All Packages","url":"allpackages-index.html"},{"l":"io.github.asewhy.conversions"},{"l":"io.github.asewhy.conversions.builders"},{"l":"io.github.asewhy.conversions.defaults"},{"l":"io.github.asewhy.conversions.exceptions"},{"l":"io.github.asewhy.conversions.support"},{"l":"io.github.asewhy.conversions.support.annotations"}]
