@@ -49,7 +49,7 @@ public interface iConversionFactory {
     /**
      * Метод должен возвращать имя поля, которое ожидает поле класса
      * <p>
-     * [поле класса] -> convertFieldName(пое класса) -> [поле метода]
+     * [поле класса] -&gt; convertFieldName(пое класса) -&gt; [поле метода]
      *
      * @param fromName название поля класса
      * @return название поля в json

@@ -36,6 +36,7 @@ public class ConversionProvider {
      * Заполняет мутатор данными из
      *
      * @param from Мутатор для заполнения (перед, тем как мутатор будет работать его нужно заполнить.)
+     * @param mirror набор отражений
      * @param <T> Тип мутатора
      */
     public <T extends ConversionMutator<?>> void createMutator(T from, Map<String, Object> mirror) {

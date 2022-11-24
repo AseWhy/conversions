@@ -8,7 +8,7 @@
 
     <groupId>io.github.asewhy</groupId>
     <artifactId>conversions</artifactId>
-    <version>1.0</version>
+    <version>1.1</version>
 
     <licenses>
         <license>
@@ -188,7 +188,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
-                <version>2.9.1</version>
+                <version>3.0.0</version>
+                <configuration>
+                    <doclint>all,-missing</doclint>
+                </configuration>
                 <executions>
                     <execution>
                         <id>attach-javadocs</id>
@@ -196,8 +199,8 @@
                             <goal>jar</goal>
                         </goals>
                         <configuration>
-                            <source>8</source>
-                            <javadocExecutable>/usr/lib/jvm/java-14-openjdk-amd64/bin/javadoc</javadocExecutable>
+                            <source>11</source>
+                            <javadocExecutable>${java.home}/bin/javadoc</javadocExecutable>
                         </configuration>
                     </execution>
                 </executions>
