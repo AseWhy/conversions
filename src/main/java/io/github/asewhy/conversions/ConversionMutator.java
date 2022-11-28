@@ -3,7 +3,7 @@ package io.github.asewhy.conversions;
 import io.github.asewhy.ReflectionUtils;
 import io.github.asewhy.conversions.exceptions.StoreNotFoundException;
 import io.github.asewhy.conversions.support.annotations.MutatorExcludes;
-import io.github.asewhy.conversions.support.iConversionFactory;
+import io.github.asewhy.conversions.support.iConversionConfiguration;
 import lombok.extern.log4j.Log4j2;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -25,24 +25,22 @@ import java.util.stream.Collectors;
 public abstract class ConversionMutator<T> {
     protected final Set<String> touchedFields = new HashSet<>();
 
-    private ConversionStore store;
-    private iConversionFactory factory;
+    private ConversionConfigurationInternal config;
 
     /**
      * Регистрирует хранилище типов для этого мутатора
      *
      * @param internal хранилище типов
      */
-    protected void registerStore(@NotNull ConversionFactoryInternal internal) {
-        this.factory = internal.getFactory();
-        this.store = internal.getStore();
+    protected void registerStore(@NotNull ConversionConfigurationInternal internal) {
+        this.config = internal;
     }
 
     /**
      * Заполняет родительскую сущность для сущности
-     *
+     * <p>
      * Вызывается перед fill для вложенных сущностей
-     *
+     * <p>
      * Сначала заполняет родительская сущность, т.к. если заполнять родителей после заполнения
      * основной сущности получается так что родитель одной сущности заполнен, а родитель родителя
      * текущей сущности ещё не определен
@@ -52,6 +50,8 @@ public abstract class ConversionMutator<T> {
      */
     protected void fillParent(T fill, @NotNull Object parent) {
         var parentClazz = parent.getClass();
+        var config = this.config.getConfig();
+        var store = this.config.getStore();
         var metadata = store.getMutatorBound(this.getClass());
         var parentField = metadata.getBoundField(parentClazz);
         var boundSetters = metadata.getBoundSetters();
@@ -66,7 +66,7 @@ public abstract class ConversionMutator<T> {
             }
         }
 
-        fillParentInternal(fill, parent, factory.provideContext());
+        fillParentInternal(fill, parent, config.context());
     }
 
     /**
@@ -76,7 +76,7 @@ public abstract class ConversionMutator<T> {
      * @return заполненная сущность
      */
     public final T fill(T fill) {
-        return fill(fill, factory.provideContext());
+        return fill(fill, this.config.getConfig().context());
     }
 
     /**
@@ -87,6 +87,8 @@ public abstract class ConversionMutator<T> {
      * @return заполненная сущность
      */
     public final T fill(T fill, Object context) {
+        var store = this.config.getStore();
+
         if(store == null) {
             throw new StoreNotFoundException(fill);
         }
@@ -216,8 +218,21 @@ public abstract class ConversionMutator<T> {
         return hasField(field.getName());
     }
 
-    public final String convertFieldName(String name) {
-        return factory.convertFieldName(name);
+    public final @NotNull String convertFieldName(String name) {
+        var store = this.config.getStore();
+
+        if(store == null) {
+            throw new StoreNotFoundException(name);
+        }
+
+        var metadata = store.getMutatorBound(this.getClass());
+        var field = metadata.getBoundField(name);
+
+        if(field != null) {
+            return this.config.getNamingStrategy().convert(name, field.getType());
+        } else {
+            return this.config.getNamingStrategy().convert(name, null);
+        }
     }
 
     public final boolean hasField(String name) {

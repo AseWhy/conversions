@@ -37,8 +37,8 @@ public class MutatorObjectBuilder<P extends iBuildable> extends HashMap<String, 
 
     public <T extends ConversionMutator<?>> T build(Class<T> target) {
         if(root == null) {
-            var factory = provider.getFactory();
-            var result = (T) factory.getObjectMapper().convertValue(this, target);
+            var config = provider.getConfig();
+            var result = (T) config.getObjectMapper().convertValue(this, target);
 
             provider.createMutator(result, this);
 

@@ -22,7 +22,7 @@ import java.util.Map;
 @SuppressWarnings({"unchecked", "unused"})
 public class ConversionProvider {
     @Autowired
-    protected ConversionFactoryInternal factory;
+    protected ConversionConfigurationInternal config;
 
     /**
      * Получить строитель мутатора
@@ -45,19 +45,19 @@ public class ConversionProvider {
             return;
         }
 
-        from.registerStore(this.getFactory());
+        from.registerStore(this.getConfig());
 
         var clazz = from.getClass();
-        var factory = this.factory.getFactory();
-        var store = this.factory.getStore();
+        var store = this.config.getStore();
+        var namingStrategy = this.config.getNamingStrategy();
         var metadata = store.getMutatorBound(clazz);
 
         var founds = metadata.getFoundFields();
 
         from.touchedFields.addAll(mirror.keySet());
 
-        for (var current : founds) {
-            var jsonName = factory.convertFieldName(current.getName());
+        for (var current: founds) {
+            var jsonName = namingStrategy.convert(current.getName(), current.getType());
 
             if (mirror.containsKey(jsonName)) {
                 var mirrorValue = mirror.get(jsonName);
@@ -110,7 +110,7 @@ public class ConversionProvider {
      * @return true если может
      */
     public boolean canResolveResponse(Class<?> type, Type generics, String mapping) {
-        var store = factory.getStore();
+        var store = config.getStore();
         var resolver = store.findResolver(type);
 
         if(resolver != null) {
@@ -144,10 +144,10 @@ public class ConversionProvider {
             return null;
         }
 
-        var providedContext = factory.getFactory().provideContext();
+        var providedContext = config.getConfig().context();
         var castedContext = context != null ? context : providedContext;
         var type = ReflectionUtils.skipAnonClasses(from.getClass());
-        var store = factory.getStore();
+        var store = config.getStore();
         var resolver = store.findResolver(type);
 
         if(resolver != null) {
@@ -223,7 +223,7 @@ public class ConversionProvider {
             return null;
         }
 
-        var store = factory.getStore();
+        var store = config.getStore();
         var fromClass = ReflectionUtils.skipAnonClasses(from.getClass());
 
         if(applyMappingConversion) {
@@ -251,7 +251,8 @@ public class ConversionProvider {
         var result = (Object) null;
         var foundType = (Class<?>) null;
         var boundType = (Class<?>) null;
-        var factory = this.factory.getFactory();
+        var config = this.config.getConfig();
+        var namingStrategy = this.config.getNamingStrategy();
         var metadata = store.getResponseBound(fromClass, mapping);
         var boundClass = metadata.getBoundClass();
         var setters = metadata.getBoundSetters();
@@ -271,7 +272,9 @@ public class ConversionProvider {
             var map = (Map<?, ?>) from;
 
             for(var bound: metadata.getBoundFields()) {
-                result = map.containsKey(bound.getName()) ? map.get(bound.getName()) : map.get(factory.convertFieldName(bound.getName()));
+                result = map.containsKey(bound.getName()) ?
+                    map.get(bound.getName()) :
+                    map.get(namingStrategy.convert(bound.getName(), bound.getType()));
 
                 if(result != null) {
                     foundType = result.getClass();
@@ -376,7 +379,7 @@ public class ConversionProvider {
             }
         }
 
-        instance.fillInternal(from, this, context != null ? context : factory.provideContext());
+        instance.fillInternal(from, this, context != null ? context : config.context());
 
         return instance;
     }

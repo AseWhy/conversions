@@ -1,6 +1,6 @@
 package io.github.asewhy.conversions;
 
-import io.github.asewhy.conversions.support.iConversionFactory;
+import io.github.asewhy.conversions.support.iConversionConfiguration;
 
 /**
  * Конвертируемый ответ сервера
@@ -12,7 +12,7 @@ public abstract class ConversionResponse<T> {
      * Метод для ручного заполнения текущей сущности
      *
      * @param from сущность из которой происходит заполнение
-     * @param context контекст поставляемый фабрикой {@link iConversionFactory#provideContext()}
+     * @param context контекст поставляемый конфигурацией {@link iConversionConfiguration#context()}
      */
     protected void fillInternal(T from, Object context) {
         // Stub
@@ -23,7 +23,7 @@ public abstract class ConversionResponse<T> {
      *
      * @param from сущность из которой происходит заполнение
      * @param provider текущий поставщик конверсии
-     * @param context контекст поставляемый фабрикой {@link iConversionFactory#provideContext()}
+     * @param context контекст поставляемый конфигурацией {@link iConversionConfiguration#context()}
      */
     protected void fillInternal(T from, ConversionProvider provider, Object context) {
         fillInternal(from, context);

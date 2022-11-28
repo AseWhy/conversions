@@ -36,7 +36,7 @@ public class MutatorArgumentResolver implements HandlerMethodArgumentResolver {
         @NotNull NativeWebRequest nativeWebRequest,
         WebDataBinderFactory binderFactory
     ) throws Exception {
-        var factory = provider.getFactory();
+        var factory = provider.getConfig();
         var objectMapper = factory.getObjectMapper();
         var httpServletRequest = nativeWebRequest.getNativeRequest(HttpServletRequest.class);
 

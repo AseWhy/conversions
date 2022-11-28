@@ -33,6 +33,10 @@ public class ClassMetadata {
     //
     private Map<Class<?>, Field> boundFieldsMap = new HashMap<>();
     //
+    // Все найденные поля класса (ключ по имени)
+    //
+    private Map<String, Field> boundFieldsNameMap = new HashMap<>();
+    //
     // Сеттеры для всех найденных полей
     //
     private Map<Field, Method> boundSetters = new HashMap<>();
@@ -57,6 +61,16 @@ public class ClassMetadata {
      */
     public Field getBoundField(Class<?> forClass) {
         return boundFieldsMap.get(forClass);
+    }
+
+    /**
+     * Найти поле по его имени
+     *
+     * @param field название поля
+     * @return найденное поле (если есть) или null
+     */
+    public Field getBoundField(String field) {
+        return boundFieldsNameMap.get(field);
     }
 
     /**
@@ -88,6 +102,7 @@ public class ClassMetadata {
         if(field != null) {
             this.boundFields.add(field);
             this.boundFieldsMap.put(field.getType(), field);
+            this.boundFieldsNameMap.put(field.getName(), field);
         }
     }
 }

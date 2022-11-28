@@ -58,7 +58,7 @@ public final class ResponseMessageHandler extends RequestResponseBodyMethodProce
             if(canProcess(returnType, mapping)) {
                 converted = provider.createResponseResolve(returnValue, mapping);
             } else {
-                if(provider.getFactory().getFactory().isDebug()) {
+                if(provider.getConfig().getConfig().isDebug()) {
                     log.warn("IS NOT A CONVERTIBLE ENTITY " + returnType.getParameterType());
                 }
             }
@@ -103,7 +103,7 @@ public final class ResponseMessageHandler extends RequestResponseBodyMethodProce
      */
     private boolean canProcess(@NotNull MethodParameter parameter, String mapping) {
         var result = parameter.getParameterType();
-        var store = provider.getFactory().getStore();
+        var store = provider.getConfig().getStore();
 
         if(store.isPresentResponse(result)) {
             return true;

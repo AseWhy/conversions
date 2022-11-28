@@ -1,7 +1,7 @@
 # Conversions
 
 Небольшой модуль для конвертации сущностей в DTO. Конвертация происходит за счет рефлексии. Для начала работы с модулем
-необходимо настроить сканирование компонентов, для чего нужно создать бин iConversionFactory любым удобным способом. Для
+необходимо настроить сканирование компонентов, для чего нужно создать бин iConversionConfiguration любым удобным способом. Для
 автоматического сканирования компонентов приложения нужно установить EnableConversions аннотацию в любую точку конфигурации
 приложения.
 
@@ -11,57 +11,39 @@
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.asewhy.conversions.ConversionStore;
 import io.github.asewhy.conversions.support.annotations.EnableConversions;
-import io.github.asewhy.conversions.support.iConversionFactory;
+import io.github.asewhy.conversions.support.iConversionConfiguration;
+import io.github.asewhy.conversions.support.naming.iConversionNamingStrategy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
-import org.springframework.stereotype.Service;
-import paa.coder.noodleCriteriaBuilder.restFilter.payloads.RestFilter;
-import paa.coder.noodleCriteriaBuilder.restFilter.payloads.RestOrder;
-import paa.coder.noodleCriteriaBuilder.restFilter.payloads.RestPage;
+import org.springframework.context.annotation.Configuration;
 
-import java.util.Map;
-import java.util.Set;
-
-@Service
+@Configuration
 @EnableConversions
-public class ConversionFactory implements iConversionFactory {
+public class ConversionConfig implements iConversionConfiguration {
     @Autowired
     protected ObjectMapper objectMapper;
     @Autowired
-    protected ConversionSupportContext conversionSupportContext;
-    @Autowired
     protected ApplicationContext context;
+    @Autowired
+    protected ConversionSupportContext supportContext;
 
     @Override
-    public ConversionStore provideStore() {
+    public ConversionStore conversionStore() {
         var store = new ConversionStore(context);
 
-        store.from("com.example");
+        store.from("burmistr.service.correspondence.DTO.features");
 
         return store;
     }
 
     @Override
-    public Map<Class<?>, Set<String>> provideExcludes() {
-        var excludes = iConversionFactory.super.provideExcludes();
-        var anySet = Set.of(ANY);
-
-        excludes.put(RestFilter.class, anySet);
-        excludes.put(RestPage.class, anySet);
-        excludes.put(RestOrder.class, anySet);
-        excludes.put(SimplePage.class, anySet);
-
-        return excludes;
-    }
-
-    @Override
-    public ObjectMapper provideObjectMapper() {
+    public ObjectMapper objectMapper() {
         return objectMapper;
     }
 
     @Override
-    public String convertFieldName(String fromName) {
-        return iConversionFactory.super.convertFieldName(fromName);
+    public Object context() {
+        return supportContext;
     }
 }
 ```
@@ -69,6 +51,63 @@ public class ConversionFactory implements iConversionFactory {
 Как показано выше в методе `provideStore` необходимо вернуть экземпляр хранилища конверсий. В хранилище хранятся информация
 о конвертируемых сущностях, и маппинги полей к ним. Далее поставщиком конверсий все сущности будут создаваться из экземпляра этого
 хранилища.
+
+Если необходима собственная политика именования сущностей, то необходимо предоставить её в методе конфигурации `namingPolicy`. Пример измененной конфигурации показан ниже:
+
+```java
+public class ConversionConfig implements iConversionConfiguration {
+    // ...
+    @Autowired
+    protected ConversionNamingStrategy conversionNamingStrategy;
+
+    @Override
+    public iConversionNamingStrategy namingStrategy() {
+        return conversionNamingStrategy;
+    }
+
+    // ...
+}
+```
+
+Пример политики именования можно увидеть ниже:
+
+```java
+import io.github.asewhy.conversions.support.CaseUtil;
+import io.github.asewhy.conversions.support.naming.ExtrudableNamingStrategy;
+import org.jetbrains.annotations.NotNull;
+import org.springframework.stereotype.Component;
+import paa.coder.noodleCriteriaBuilder.restFilter.payloads.RestFilter;
+import paa.coder.noodleCriteriaBuilder.restFilter.payloads.RestOrder;
+import paa.coder.noodleCriteriaBuilder.restFilter.payloads.RestPage;
+import java.util.Set;
+
+@Component
+public class ConversionNamingStrategy extends ExtrudableNamingStrategy {
+    /**
+     * Все сущности кроме этих будут следовать политике
+     */
+    private final static Set<Class<?>> EXCLUDED = Set.of(
+        RestFilter.class,
+        RestPage.class,
+        RestOrder.class
+    );
+
+    @Override
+    protected boolean isExcluded(@NotNull String defaultName, @NotNull Class<?> rawReturnType) {
+        return EXCLUDED.contains(rawReturnType);
+    }
+
+    /**
+     * Следуя этой политике, конвертер думает что все поля сущностей имеют snakeCase в запросе, и ответе
+     */
+    @Override
+    protected String convert(@NotNull String defaultName) {
+        return CaseUtil.toLowerSnakeCase(defaultName);
+    }
+}
+```
+
+В примере показана работа с конкретно `ExtrudableNamingStrategy` классом, но никто не запрещает реализовать свою логику используя `iConversionNamingStrategy`;
 
 ## Конвертация сущностей
 
@@ -176,7 +215,7 @@ public class SomeSourceObjectMutatorDTO extends ConversionMutator<SomeSourceObje
 ```
 
 На примере выше, в процессе заполнения сущности поле p будет заполнено значением которое будет получено из сервиса SomeService. При 
-этом экземпляр SomeService нужно передать в фабрике как контекст.
+этом экземпляр SomeService нужно передать в конфигурации как контекст.
 
 Если есть мутируемая сущность является вложенной, то в ней можно заполнить некоторые поля из родительской сущности. Используя метод `fillParentInternal`
 можно инициализировать текущий объект при помощи родительского объекта. Пример показан ниже.

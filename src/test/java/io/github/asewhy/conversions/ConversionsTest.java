@@ -1,7 +1,7 @@
 package io.github.asewhy.conversions;
 
 import io.github.asewhy.ReflectionUtils;
-import io.github.asewhy.conversions.config.ConversationalTestFactory;
+import io.github.asewhy.conversions.config.ConversationalTestConfiguration;
 import io.github.asewhy.conversions.config.classMap.A;
 import io.github.asewhy.conversions.config.classMap.B;
 import io.github.asewhy.conversions.config.classMap.C;
@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = { ConversationalTestFactory.class })
+@SpringBootTest(classes = { ConversationalTestConfiguration.class })
 public class ConversionsTest {
     @Autowired
     protected ConversionProvider provider;
