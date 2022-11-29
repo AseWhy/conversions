@@ -31,7 +31,7 @@ public class ConversionConfig implements iConversionConfiguration {
     public ConversionStore conversionStore() {
         var store = new ConversionStore(context);
 
-        store.from("burmistr.service.correspondence.DTO.features");
+        store.from("com.example");
 
         return store;
     }
