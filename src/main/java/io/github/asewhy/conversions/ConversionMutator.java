@@ -3,12 +3,11 @@ package io.github.asewhy.conversions;
 import io.github.asewhy.ReflectionUtils;
 import io.github.asewhy.conversions.exceptions.StoreNotFoundException;
 import io.github.asewhy.conversions.support.annotations.MutatorExcludes;
-import io.github.asewhy.conversions.support.iConversionConfiguration;
+import io.github.asewhy.conversions.support.iBound;
 import lombok.extern.log4j.Log4j2;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
-import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
@@ -53,17 +52,14 @@ public abstract class ConversionMutator<T> {
         var config = this.config.getConfig();
         var store = this.config.getStore();
         var metadata = store.getMutatorBound(this.getClass());
-        var parentField = metadata.getBoundField(parentClazz);
-        var boundSetters = metadata.getBoundSetters();
+        var bound = metadata.getBound();
 
-        if(parentField != null) {
-            var parentSetter = boundSetters.get(parentField);
-
-            if(parentSetter != null) {
-                ReflectionUtils.safeInvoke(parentSetter, fill, parent);
-            } else {
-                ReflectionUtils.safeSet(parentField, fill, parent);
+        for(var current: bound) {
+            if(!parentClazz.isAssignableFrom(current.getType())) {
+                continue;
             }
+
+            current.setComputedResult(fill, parent);
         }
 
         fillParentInternal(fill, parent, config.context());
@@ -97,14 +93,11 @@ public abstract class ConversionMutator<T> {
         // Получаю бинды для класса
         //
         var metadata = store.getMutatorBound(this.getClass());
-        var foundFields = metadata.getIntersects();
-        var boundSetters = metadata.getBoundSetters();
-        var foundGetters = metadata.getFoundGetters();
 
         //
         // Перебираю поля, с совпадающими типами
         //
-        for(var current: foundFields.entrySet()) {
+        for(var current: metadata.getIntersect().entrySet()) {
             //
             // Поставщик
             //
@@ -122,10 +115,10 @@ public abstract class ConversionMutator<T> {
             //
             if(hasField(found)) {
                 if(requireProcessField(found, context, fill)) {
-                    var received = foundGetters.containsKey(found) ? ReflectionUtils.safeInvoke(foundGetters.get(found), this) : ReflectionUtils.safeAccess(found, this);
+                    var received = found.getComputedResult(this);
 
                     if(received != null) {
-                        var exists = ReflectionUtils.safeAccess(bound, fill);
+                        var exists = bound.getComputedResult(fill);
 
                         if(received instanceof ConversionMutator && requireProcessNested(found, received)) {
                             if(exists == null) {
@@ -142,8 +135,8 @@ public abstract class ConversionMutator<T> {
 
                         if(received instanceof Collection<?> && requireProcessNested(found, received)) {
                             var foundCollection = (Collection<?>) received;
-                            var foundSubtype = ReflectionUtils.findXGeneric(found);
-                            var boundSubtype = ReflectionUtils.findXGeneric(bound);
+                            var foundSubtype = found.findXGeneric();
+                            var boundSubtype = bound.findXGeneric();
                             var foundIdField = ReflectionUtils.findTypeId(foundSubtype);
                             var boundIdField = ReflectionUtils.findTypeId(boundSubtype);
 
@@ -191,11 +184,9 @@ public abstract class ConversionMutator<T> {
                     }
 
                     if(fill instanceof Map) {
-                        ((Map<Object, Object>) fill).put(found.getName(), received);
-                    } else if(boundSetters.containsKey(bound)) {
-                        ReflectionUtils.safeInvoke(boundSetters.get(bound), fill, received);
+                        ((Map<Object, Object>) fill).put(found.getPureName(), received);
                     } else {
-                        ReflectionUtils.safeSet(bound, fill, received);
+                        bound.setComputedResult(fill, received);
                     }
                 }
             }
@@ -206,16 +197,16 @@ public abstract class ConversionMutator<T> {
         return fill;
     }
 
-    public boolean requireProcessField(@NotNull Field field, Object context, T fill) {
-        return field.getAnnotation(MutatorExcludes.class) == null;
+    public boolean requireProcessField(@NotNull iBound bound, Object context, T fill) {
+        return !bound.isAnnotated(MutatorExcludes.class);
     }
 
-    public boolean requireProcessNested(Field field, Object found) {
+    public boolean requireProcessNested(iBound bound, Object found) {
         return true;
     }
 
-    public final boolean hasField(@NotNull Field field) {
-        return hasField(field.getName());
+    public final boolean hasField(@NotNull iBound field) {
+        return hasField(field.getPureName());
     }
 
     public final @NotNull String convertFieldName(String name) {

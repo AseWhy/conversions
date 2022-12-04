@@ -13,8 +13,8 @@ import java.time.LocalDate;
 @Setter
 @ToString
 @ResponseDTO
-public class ExampleTestAuthorResponseConverter extends ConversionResponse<ExampleTestAuthorEntity> {
+public class ExampleTestAuthorResponse extends ConversionResponse<ExampleTestAuthorEntity> {
     private String name;
     private LocalDate birthDate;
-    private ExampleTestPointResponseConverter location;
+    private ExampleTestPointResponse location;
 }

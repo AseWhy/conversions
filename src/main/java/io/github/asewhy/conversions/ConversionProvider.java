@@ -52,16 +52,16 @@ public class ConversionProvider {
         var namingStrategy = this.config.getNamingStrategy();
         var metadata = store.getMutatorBound(clazz);
 
-        var founds = metadata.getFoundFields();
+        var founds = metadata.getFound();
 
         from.touchedFields.addAll(mirror.keySet());
 
         for (var current: founds) {
-            var jsonName = namingStrategy.convert(current.getName(), current.getType());
+            var jsonName = namingStrategy.convert(current.getPureName(), current.getType());
 
             if (mirror.containsKey(jsonName)) {
                 var mirrorValue = mirror.get(jsonName);
-                var found = ReflectionUtils.safeAccess(current, from);
+                var found = current.getComputedResult(from);
 
                 if(metadata.getIsMap()) {
                     continue;
@@ -238,9 +238,6 @@ public class ConversionProvider {
         }
 
         if(!store.isPresentResponse(fromClass)) {
-            //
-            // Класс не найден в сторе для преобразования
-            //
             throw new IllegalArgumentException(
                 "It's entity is not registered on current store. " + fromClass + "\n" +
                 "Check the classloader used to initialize the store, and the current classloader."
@@ -255,7 +252,6 @@ public class ConversionProvider {
         var namingStrategy = this.config.getNamingStrategy();
         var metadata = store.getResponseBound(fromClass, mapping);
         var boundClass = metadata.getBoundClass();
-        var setters = metadata.getBoundSetters();
 
         try {
             instance = (T) boundClass.getConstructor().newInstance();
@@ -271,7 +267,7 @@ public class ConversionProvider {
         if(metadata.getIsMap() && from instanceof Map) {
             var map = (Map<?, ?>) from;
 
-            for(var bound: metadata.getBoundFields()) {
+            for(var bound: metadata.getBound()) {
                 result = map.containsKey(bound.getName()) ?
                     map.get(bound.getName()) :
                     map.get(namingStrategy.convert(bound.getName(), bound.getType()));
@@ -287,7 +283,7 @@ public class ConversionProvider {
                     if(result instanceof Collection<?>) {
                         var collection = (Collection<?>) result;
                         var tempArray = ReflectionUtils.makeCollectionInstance(foundType);
-                        var boundGeneric = ReflectionUtils.findXGeneric(bound);
+                        var boundGeneric = bound.findXGeneric();
                         var isBoundedArray = boundGeneric != null && ConversionResponse.class.isAssignableFrom(boundGeneric);
 
                         for(var item: collection) {
@@ -310,15 +306,11 @@ public class ConversionProvider {
                 }
 
                 if(foundType == null || foundType.isAssignableFrom(boundType)) {
-                    if(setters.containsKey(bound)) {
-                        ReflectionUtils.safeInvoke(setters.get(bound), instance, result);
-                    } else {
-                        ReflectionUtils.safeSet(bound, instance, result);
-                    }
+                    bound.setComputedResult(instance, result);
                 }
             }
         } else {
-            for(var current: metadata.getIntersects().entrySet()) {
+            for(var current: metadata.getIntersect().entrySet()) {
                 //
                 // Поставляющее поле
                 //
@@ -330,16 +322,19 @@ public class ConversionProvider {
                 //
                 // Класс, которому принадлежит поле
                 //
-                var declaredClazz = bound.getDeclaringClass();
+                var declaredClazz = bound.getDeclaredClass();
 
                 //
                 // Если класс, которому принадлежит поле не совпадает с классом биндинга, то ошибка
                 //
                 if(!declaredClazz.isAssignableFrom(boundClass)) {
-                    throw new RuntimeException("Cannot cast " + declaredClazz.getName() + " to " + boundClass.getName() + "[ " + fromClass.getName() + " (" + mapping + ")]");
+                    throw new RuntimeException(
+                        "Cannot cast " + declaredClazz.getName() + " to " + boundClass.getName() + "[" + fromClass.getName() + " (" + mapping + ")]. " +
+                        "Have you registered two converters with the same mappings?"
+                    );
                 }
 
-                result = metadata.getFieldValue(from, found);
+                result = found.getComputedResult(from);
 
                 if(result != null) {
                     foundType = found.getType();
@@ -352,7 +347,7 @@ public class ConversionProvider {
                     if(result instanceof Collection<?>) {
                         var collection = (Collection<?>) result;
                         var tempArray = ReflectionUtils.makeCollectionInstance(foundType);
-                        var boundGeneric = ReflectionUtils.findXGeneric(bound);
+                        var boundGeneric = bound.findXGeneric();
                         var isBoundedArray = boundGeneric != null && ConversionResponse.class.isAssignableFrom(boundGeneric);
 
                         for(var item: collection) {
@@ -371,11 +366,7 @@ public class ConversionProvider {
                     }
                 }
 
-                if (setters.containsKey(bound)) {
-                    ReflectionUtils.safeInvoke(setters.get(bound), instance, result);
-                } else {
-                    ReflectionUtils.safeSet(bound, instance, result);
-                }
+                bound.setComputedResult(instance, result);
             }
         }
 

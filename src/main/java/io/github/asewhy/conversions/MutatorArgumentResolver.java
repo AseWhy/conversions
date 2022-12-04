@@ -36,8 +36,9 @@ public class MutatorArgumentResolver implements HandlerMethodArgumentResolver {
         @NotNull NativeWebRequest nativeWebRequest,
         WebDataBinderFactory binderFactory
     ) throws Exception {
-        var factory = provider.getConfig();
-        var objectMapper = factory.getObjectMapper();
+        var config = provider.getConfig();
+        var store = config.getStore();
+        var objectMapper = config.getObjectMapper();
         var httpServletRequest = nativeWebRequest.getNativeRequest(HttpServletRequest.class);
 
         if (httpServletRequest != null) {
@@ -51,7 +52,7 @@ public class MutatorArgumentResolver implements HandlerMethodArgumentResolver {
                     var collection = (Collection<?>) result;
                     var generic = ReflectionUtils.findXGeneric(parameter.getGenericParameterType(), 0);
 
-                    if(generic != null && factory.getStore().isPresentMutator(generic)) {
+                    if(generic != null && store.isPresentMutator(generic)) {
                         var parsedGeneric = (Class<? extends ConversionMutator<?>>) generic;
                         var ghosts = ReflectionUtils.makeCollectionInstance(type);
 
@@ -73,7 +74,7 @@ public class MutatorArgumentResolver implements HandlerMethodArgumentResolver {
                     var parsed = objectMapper.treeToValue(tree, Map.class);
 
                     if (
-                        factory.getStore().isPresentMutator(parameter.getParameterType()) &&
+                        store.isPresentMutator(parameter.getParameterType()) &&
                         result instanceof ConversionMutator<?>
                     ) {
                         provider.createMutator((ConversionMutator<?>) result, parsed);

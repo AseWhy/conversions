@@ -1,22 +1,28 @@
 package io.github.asewhy.conversions;
 
 import io.github.asewhy.ReflectionUtils;
+import io.github.asewhy.conversions.support.BoundedReceiver;
+import io.github.asewhy.conversions.support.BoundedSource;
 import io.github.asewhy.conversions.support.CaseUtil;
 import io.github.asewhy.conversions.support.ClassMetadata;
 import io.github.asewhy.conversions.support.annotations.*;
 import lombok.Getter;
 import lombok.extern.log4j.Log4j2;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+
+import static io.github.asewhy.conversions.ConversionUtils.*;
 
 @Log4j2
 @Getter
@@ -194,92 +200,107 @@ public class ConversionStore {
     private void registerResponse(Class<?> target, Class<?> response) {
         var mapping = getEntityMapping(response);
         var metadataMap = getResponseBound(target);
+
+        if (metadataMap.containsKey(mapping)) {
+            throw new RuntimeException(
+                "It is not possible to create a converter for this type of response - " + target + "[" + mapping + "], " +
+                "because there is already a registered mapping for it. Use a different mapping or remove the declaration of this converter."
+            );
+        }
+
         var metadata = metadataMap.computeIfAbsent(mapping, (e) -> new ClassMetadata());
-        var fieldsFound = metadata.getIntersects();
-        var fieldsTotal = metadata.getFoundFields();
-        var fieldsSetters = metadata.getBoundSetters();
-        var fieldsGetters = metadata.getFoundGetters();
-        var fieldsBound = metadata.getBoundFieldsMap();
+
+        var fieldsFound = metadata.getIntersect();
+        var fieldsTotal = metadata.getFound();
+
         var foundFields = ReflectionUtils.scanFieldsToMap(target);
         var boundFields = ReflectionUtils.scanFieldsToMap(response);
         var foundMethods = ReflectionUtils.scanMethodsToMap(target);
         var boundMethods = ReflectionUtils.scanMethodsToMap(response);
+        var foundSuffix = target.isInterface() ? "[Interface]" : Map.class.isAssignableFrom(target) ? "[Map]" : "[Pure]";
 
         metadata.setBoundClass(response);
         metadata.setIsMap(Map.class.isAssignableFrom(target));
 
-        log.info("Register conversion response from " + target.getSimpleName() + " to " + response.getSimpleName());
+        log.info("Register conversion response from {} to {} {}", target.getSimpleName(), response.getSimpleName(), foundSuffix);
 
-        for(var current: foundFields.entrySet()) {
-            var found = current.getValue();
-            var bound = boundFields.get(current.getKey());
+        if(target.isInterface()) {
+            for (var current : foundMethods.entrySet()) {
+                var found = current.getValue();
+                var pureFieldName = getPureName(current.getKey());
+                var bound = boundFields.get(pureFieldName);
 
-            if(Modifier.isStatic(found.getModifiers())){
-                continue;
-            }
-
-            if(bound != null) {
-                if(Modifier.isStatic(bound.getModifiers())){
+                if (Modifier.isStatic(found.getModifiers())) {
                     continue;
                 }
 
-                var foundType = found.getType();
-                var boundType = bound.getType();
+                var foundSource = new BoundedSource(found, Set.of(found.getDeclaredAnnotations()));
 
-                if(
-                    boundType == foundType && (
-                        !Collection.class.isAssignableFrom(foundType) || isConventionalCollection(found, bound)
-                    ) ||
-                    isConverterOwn(found, boundType) &&
-                    ConversionResponse.class.isAssignableFrom(boundType)
-                ) {
-                    fieldsFound.put(found, bound);
+                if (bound != null) {
+                    if (Modifier.isStatic(bound.getModifiers())) {
+                        continue;
+                    }
+
+                    var foundType = found.getReturnType();
+                    var boundType = bound.getType();
+
+                    if (
+                        boundType == foundType && (
+                            !Collection.class.isAssignableFrom(foundType) || isConventionalCollection(found, bound)
+                        ) ||
+                        isConverterOwn(found, boundType) &&
+                        ConversionResponse.class.isAssignableFrom(boundType)
+                    ) {
+                        fieldsFound.put(foundSource, getReceiverForField(boundMethods, bound));
+                    }
+
+                    fieldsTotal.add(foundSource);
+                } else if (metadata.getIsMap() || found.getAnnotation(IgnoreMatch.class) != null) {
+                    fieldsTotal.add(foundSource);
+                }
+            }
+        } else {
+            for (var current : foundFields.entrySet()) {
+                var found = current.getValue();
+                var bound = boundFields.get(current.getKey());
+
+                if (Modifier.isStatic(found.getModifiers())) {
+                    continue;
                 }
 
-                fieldsTotal.add(found);
-            } else if(metadata.getIsMap() || found.getAnnotation(IgnoreMatch.class) != null) {
-                fieldsTotal.add(found);
+                var foundSource = getSourceForField(foundMethods, found);
+
+                if (bound != null) {
+                    if (Modifier.isStatic(bound.getModifiers())) {
+                        continue;
+                    }
+
+                    var foundType = found.getType();
+                    var boundType = bound.getType();
+
+                    if (
+                        boundType == foundType && (
+                            !Collection.class.isAssignableFrom(foundType) || isConventionalCollection(found, bound)
+                        ) ||
+                        isConverterOwn(found, boundType) &&
+                        ConversionResponse.class.isAssignableFrom(boundType)
+                    ) {
+                        fieldsFound.put(foundSource, getReceiverForField(boundMethods, bound));
+                    }
+
+                    fieldsTotal.add(foundSource);
+                } else if (metadata.getIsMap() || found.getAnnotation(IgnoreMatch.class) != null) {
+                    fieldsTotal.add(foundSource);
+                }
             }
         }
 
-        for(var current: boundFields.entrySet()) {
-            var field = current.getValue();
-            var setter = boundMethods.get("set" + CaseUtil.toPascalCase(current.getKey()));
-
-            if(Modifier.isStatic(field.getModifiers())){
+        for(var current: boundFields.values()) {
+            if(Modifier.isStatic(current.getModifiers())) {
                 continue;
             }
 
-            if(setter != null) {
-                if(Modifier.isStatic(setter.getModifiers())){
-                    continue;
-                }
-
-                var parameters = setter.getParameterTypes();
-
-                if(parameters.length > 0 && parameters[0] == field.getType()) {
-                    fieldsSetters.put(field, setter);
-                }
-            }
-
-            metadata.addBoundField(field);
-        }
-
-        for(var current: foundFields.entrySet()) {
-            var field = current.getValue();
-            var getter = foundMethods.get("get" + CaseUtil.toPascalCase(current.getKey()));
-
-            if(Modifier.isStatic(field.getModifiers())){
-                continue;
-            }
-
-            if(getter != null && getter.getReturnType().isAssignableFrom(field.getType())) {
-                if(Modifier.isStatic(getter.getModifiers())){
-                    continue;
-                }
-
-                fieldsGetters.put(field, getter);
-            }
+            metadata.addBound(getReceiverForField(boundMethods, current));
         }
 
         responseMap.put(target, metadataMap);
@@ -293,87 +314,100 @@ public class ConversionStore {
      */
     private void registerMutator(Class<?> mutator, Class<?> target) {
         var metadata = getMutatorBound(mutator);
-        var fieldsFound = metadata.getIntersects();
-        var fieldsTotal = metadata.getFoundFields();
-        var fieldsSetters = metadata.getBoundSetters();
-        var fieldsGetters = metadata.getFoundGetters();
-        var fieldsBound = metadata.getBoundFieldsMap();
+
+        var fieldsFound = metadata.getIntersect();
+        var fieldsTotal = metadata.getFound();
+
         var foundFields = ReflectionUtils.scanFieldsToMap(mutator);
         var boundFields = ReflectionUtils.scanFieldsToMap(target);
         var foundMethods = ReflectionUtils.scanMethodsToMap(mutator);
         var boundMethods = ReflectionUtils.scanMethodsToMap(target);
+        var foundSuffix = target.isInterface() ? "[Interface]" : Map.class.isAssignableFrom(target) ? "[Map]" : "[Pure]";
 
         metadata.setBoundClass(target);
         metadata.setIsMap(Map.class.isAssignableFrom(target));
 
-        log.info("Register conversion mutator from " + mutator.getSimpleName() + " to " + target.getSimpleName());
+        log.info("Register conversion mutator from {} to {} {}", mutator.getSimpleName(), target.getSimpleName(), foundSuffix);
 
-        for(var current: foundFields.entrySet()) {
-            var found = current.getValue();
-            var bound = boundFields.get(current.getKey());
+        if(target.isInterface()) {
+            for (var current : foundMethods.entrySet()) {
+                var found = current.getValue();
+                var pureFieldName = getPureName(current.getKey());
+                var bound = boundFields.get(pureFieldName);
 
-            if(Modifier.isStatic(found.getModifiers())){
-                continue;
-            }
-
-            if(bound != null) {
-                if(Modifier.isStatic(bound.getModifiers())){
+                if (Modifier.isStatic(found.getModifiers())) {
                     continue;
                 }
 
-                var foundType = found.getType();
-                var boundType = bound.getType();
+                var foundSource = new BoundedSource(found, Set.of(found.getDeclaredAnnotations()));
 
-                if(
-                    boundType == foundType && (
-                        !Collection.class.isAssignableFrom(foundType) || isConventionalCollection(bound, found)
-                    ) ||
-                    isConverterOwn(bound, foundType) &&
-                    ConversionMutator.class.isAssignableFrom(foundType)
-                ) {
-                    fieldsFound.put(found, bound);
+                if (bound != null) {
+                    if (Modifier.isStatic(bound.getModifiers())) {
+                        continue;
+                    }
+
+                    var foundType = found.getReturnType();
+                    var boundType = bound.getType();
+
+                    if (
+                        boundType == foundType && (
+                            !Collection.class.isAssignableFrom(foundType) ||
+                            isConventionalCollection(found, bound)
+                        ) ||
+                        isConverterOwn(found, boundType) &&
+                        ConversionResponse.class.isAssignableFrom(boundType)
+                    ) {
+                        fieldsFound.put(foundSource, getReceiverForField(boundMethods, bound));
+                    }
+
+                    fieldsTotal.add(foundSource);
+                } else if (metadata.getIsMap() || found.getAnnotation(IgnoreMatch.class) != null) {
+                    fieldsTotal.add(foundSource);
+                }
+            }
+        } else {
+            for(var current: foundFields.entrySet()) {
+                var found = current.getValue();
+                var bound = boundFields.get(current.getKey());
+
+                if(Modifier.isStatic(found.getModifiers())){
+                    continue;
                 }
 
-                fieldsTotal.add(found);
-            } else if(metadata.getIsMap() || found.getAnnotation(IgnoreMatch.class) != null) {
-                fieldsTotal.add(found);
+                var foundSource = getSourceForField(foundMethods, found);
+
+                if(bound != null) {
+                    if(Modifier.isStatic(bound.getModifiers())){
+                        continue;
+                    }
+
+                    var foundType = found.getType();
+                    var boundType = bound.getType();
+
+                    if(
+                        boundType == foundType && (
+                            !Collection.class.isAssignableFrom(foundType) ||
+                            isConventionalCollection(bound, found)
+                        ) ||
+                        isConverterOwn(bound, foundType) &&
+                        ConversionMutator.class.isAssignableFrom(foundType)
+                    ) {
+                        fieldsFound.put(foundSource, getReceiverForField(boundMethods, bound));
+                    }
+
+                    fieldsTotal.add(foundSource);
+                } else if(metadata.getIsMap() || found.getAnnotation(IgnoreMatch.class) != null) {
+                    fieldsTotal.add(foundSource);
+                }
             }
         }
 
-        for(var current: boundFields.entrySet()) {
-            var field = current.getValue();
-            var setter = boundMethods.get("set" + CaseUtil.toPascalCase(current.getKey()));
-
-            if(Modifier.isStatic(field.getModifiers())){
+        for(var current: boundFields.values()) {
+            if(Modifier.isStatic(current.getModifiers())) {
                 continue;
             }
 
-            if(setter != null) {
-                if(Modifier.isStatic(setter.getModifiers())){
-                    continue;
-                }
-
-                fieldsSetters.put(field, setter);
-            }
-
-            metadata.addBoundField(field);
-        }
-
-        for(var current: foundFields.entrySet()) {
-            var field = current.getValue();
-            var getter = foundMethods.get("get" + CaseUtil.toPascalCase(current.getKey()));
-
-            if(Modifier.isStatic(field.getModifiers())){
-                continue;
-            }
-
-            if(getter != null && getter.getReturnType().isAssignableFrom(field.getType())) {
-                if(Modifier.isStatic(getter.getModifiers())){
-                    continue;
-                }
-
-                fieldsGetters.put(field, getter);
-            }
+            metadata.addBound(getReceiverForField(boundMethods, current));
         }
 
         mutatorsMap.put(mutator, metadata);
@@ -386,13 +420,15 @@ public class ConversionStore {
      * @param source значение для преобразования
      * @return true если коллекции можно конвертировать
      */
-    public boolean isConventionalCollection(Field compare, Field source) {
+    public boolean isConventionalCollection(AccessibleObject compare, Field source) {
         var requireBeConverter = ReflectionUtils.findXGeneric(source);
 
         if(requireBeConverter == null) {
             return false;
         } else {
-            var compareGeneric = ReflectionUtils.findXGeneric(compare);
+            var compareGeneric = compare instanceof Method ?
+                ReflectionUtils.findXGeneric((Method) compare) :
+                ReflectionUtils.findXGeneric((Field) compare);
 
             if(compareGeneric != null && requireBeConverter == compareGeneric) {
                 return true;
@@ -415,11 +451,17 @@ public class ConversionStore {
      * @param boundClazz тип целевого поля
      * @return true если истина
      */
-    public boolean isConverterOwn(Field found, Class<?> boundClazz) {
+    public boolean isConverterOwn(AccessibleObject found, Class<?> boundClazz) {
         var generic = ReflectionUtils.findXGeneric(boundClazz);
 
         if(generic != null) {
-            return generic.isAssignableFrom(found.getType());
+            if(found instanceof Method) {
+                return generic.isAssignableFrom(((Method) found).getReturnType());
+            } else if(found instanceof Field) {
+                return generic.isAssignableFrom(((Field) found).getType());
+            } else {
+                return false;
+            }
         } else {
             return false;
         }

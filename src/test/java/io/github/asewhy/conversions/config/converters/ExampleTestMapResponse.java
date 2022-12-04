@@ -1,21 +1,18 @@
 package io.github.asewhy.conversions.config.converters;
 
 import io.github.asewhy.conversions.ConversionResponse;
-import io.github.asewhy.conversions.config.entities.ExampleTestBookEntity;
 import io.github.asewhy.conversions.support.annotations.ResponseDTO;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-import java.util.List;
+import java.util.Map;
 
 @Getter
 @Setter
 @ToString
-@ResponseDTO
-public class ExampleTestBookResponseConverter extends ConversionResponse<ExampleTestBookEntity> {
+@ResponseDTO(mapping = "some_mapping")
+public class ExampleTestMapResponse extends ConversionResponse<Map<String, String>> {
     private String name;
     private String isbin;
-    private Long pageCount;
-    private List<ExampleTestAuthorResponseConverter> authors;
 }

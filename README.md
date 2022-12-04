@@ -161,6 +161,55 @@ public class SomeSourceObjectDTO extends ConversionResponse<SomeSourceObject> {
 Таким образом поле `someUnfilledField` будет заполнено результатом выполнения метода `someMethodWhoReturnsSomeUnfilledFieldValue`
 у `SomeSourceObject`.
 
+#### Конвертация из общего интерфейса
+
+Начиная с версии 1.0.3 есть возможность выполнять преобразования сущностей A и B реализовывающих общий 
+интерфейс в одну сущность ответа. Пример можно увидеть ниже:
+
+```java
+public interface IExampleTestBook {
+    String getName();
+    String getIsbin();
+}
+```
+
+```java
+@Getter
+@Setter
+@ToString
+@AllArgsConstructor
+public class ExampleTestBookInterfaceA implements IExampleTestBook {
+    public String name;
+    public String isbin;
+    public String genre;
+}
+```
+
+```java
+@Getter
+@Setter
+@ToString
+@AllArgsConstructor
+public class ExampleTestBookInterfaceB implements IExampleTestBook {
+    public String name;
+    public String isbin;
+    public Integer pageCount;
+}
+```
+
+```java
+@Getter
+@Setter
+@ToString
+@ResponseDTO
+public class ExampleTestBookInterfaceResponse extends ConversionResponse<IExampleTestBook> {
+    private String name;
+    private String isbin;
+}
+```
+
+Пример выше скажет конвертеру конвертировать все экземпляры `IExampleTestBook` в `ExampleTestBookInterfaceResponse`
+
 ### Конвертация запроса
 
 Для указания того, что исходный объект является целью конвертации запроса нужно пометить его аннотацией `@ConversionMutator`, как в примере ниже.

@@ -17,33 +17,21 @@ import java.util.Set;
 @ToString
 public class ClassMetadata {
     //
-    // Поля пересечения с классом конверсии
+    // Поля пересечения с классом конверсии <Поле источника, Поле цели>
     //
-    private Map<Field, Field> intersects = new HashMap<>();
+    private Map<iBound, iBound> intersect = new HashMap<>();
     //
-    // Все найденные поля класса целевого класса
+    // Все найденные поля класса источника
     //
-    private Set<Field> foundFields = new HashSet<>();
+    private Set<iBound> found = new HashSet<>();
     //
-    // Все найденные поля класса целевого класса
+    // Все найденные поля класса получателя
     //
-    private Set<Field> boundFields = new HashSet<>();
-    //
-    // Все найденные поля класса
-    //
-    private Map<Class<?>, Field> boundFieldsMap = new HashMap<>();
+    private Set<iBound> bound = new HashSet<>();
     //
     // Все найденные поля класса (ключ по имени)
     //
-    private Map<String, Field> boundFieldsNameMap = new HashMap<>();
-    //
-    // Сеттеры для всех найденных полей
-    //
-    private Map<Field, Method> boundSetters = new HashMap<>();
-    //
-    // Сеттеры для всех найденных полей
-    //
-    private Map<Field, Method> foundGetters = new HashMap<>();
+    private Map<String, iBound> boundFieldsNameMap = new HashMap<>();
     //
     // Класс с которым искались пересечения
     //
@@ -54,22 +42,12 @@ public class ClassMetadata {
     private Boolean isMap;
 
     /**
-     * Найти поле по его типу
-     *
-     * @param forClass тип для поиска
-     * @return найденное поле тип которого соответствует искомому
-     */
-    public Field getBoundField(Class<?> forClass) {
-        return boundFieldsMap.get(forClass);
-    }
-
-    /**
      * Найти поле по его имени
      *
      * @param field название поля
      * @return найденное поле (если есть) или null
      */
-    public Field getBoundField(String field) {
+    public iBound getBoundField(String field) {
         return boundFieldsNameMap.get(field);
     }
 
@@ -83,26 +61,14 @@ public class ClassMetadata {
     }
 
     /**
-     * Получить значение поля для поля и класса
-     *
-     * @param from поле для получения значения
-     * @param found объект для получения значения
-     * @return полученное значение
-     */
-    public Object getFieldValue(Object from, Field found) {
-        return foundGetters.containsKey(found) ? ReflectionUtils.safeInvoke(foundGetters.get(found), from) : ReflectionUtils.safeAccess(found, from);
-    }
-
-    /**
      * Добавить поле получетаеля
      *
-     * @param field поле получателя
+     * @param bound поле получателя
      */
-    public void addBoundField(Field field) {
-        if(field != null) {
-            this.boundFields.add(field);
-            this.boundFieldsMap.put(field.getType(), field);
-            this.boundFieldsNameMap.put(field.getName(), field);
+    public void addBound(iBound bound) {
+        if(bound != null) {
+            this.bound.add(bound);
+            this.boundFieldsNameMap.put(bound.getPureName(), bound);
         }
     }
 }

@@ -11,7 +11,7 @@ import lombok.ToString;
 @Setter
 @ToString
 @ResponseDTO
-public class ExampleTestPointResponseConverter extends ConversionResponse<ExampleTestPointEntity> {
+public class ExampleTestPointResponse extends ConversionResponse<ExampleTestPointEntity> {
     private Long x;
     private Long y;
 }
