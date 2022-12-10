@@ -179,9 +179,9 @@ public interface IExampleTestBook {
 @ToString
 @AllArgsConstructor
 public class ExampleTestBookInterfaceA implements IExampleTestBook {
-    public String name;
-    public String isbin;
-    public String genre;
+    private String name;
+    private String isbin;
+    private String genre;
 }
 ```
 
@@ -191,9 +191,9 @@ public class ExampleTestBookInterfaceA implements IExampleTestBook {
 @ToString
 @AllArgsConstructor
 public class ExampleTestBookInterfaceB implements IExampleTestBook {
-    public String name;
-    public String isbin;
-    public Integer pageCount;
+    private String name;
+    private String isbin;
+    private Integer pageCount;
 }
 ```
 
