@@ -5,12 +5,12 @@ import com.fasterxml.jackson.databind.cfg.MapperConfig;
 import com.fasterxml.jackson.databind.introspect.AnnotatedField;
 import com.fasterxml.jackson.databind.introspect.AnnotatedMethod;
 import com.fasterxml.jackson.databind.introspect.AnnotatedParameter;
-import io.github.asewhy.conversions.support.naming.iConversionNamingStrategy;
+import io.github.asewhy.conversions.support.naming.ConversionNamingStrategy;
 
 public class CallbackNameStrategy extends PropertyNamingStrategy {
-    private final iConversionNamingStrategy strategy;
+    private final ConversionNamingStrategy strategy;
 
-    public CallbackNameStrategy(iConversionNamingStrategy strategy) {
+    public CallbackNameStrategy(ConversionNamingStrategy strategy) {
         this.strategy = strategy;
     }
 

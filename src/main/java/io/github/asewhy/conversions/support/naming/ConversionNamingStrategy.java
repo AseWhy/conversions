@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Политика именования
  */
-public interface iConversionNamingStrategy {
+public interface ConversionNamingStrategy {
     @NotNull
     String convert(String defaultName, @Nullable Class<?> rawReturnType);
 }

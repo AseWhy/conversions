@@ -2,7 +2,7 @@ package io.github.asewhy.conversions.support;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.asewhy.conversions.ConversionStore;
-import io.github.asewhy.conversions.support.naming.iConversionNamingStrategy;
+import io.github.asewhy.conversions.support.naming.ConversionNamingStrategy;
 
 public interface ConversionConfiguration {
     /**
@@ -45,7 +45,7 @@ public interface ConversionConfiguration {
      *
      * @return стратегия именования
      */
-    default iConversionNamingStrategy namingStrategy() {
+    default ConversionNamingStrategy namingStrategy() {
         return (defaultName, rawReturnType) -> defaultName;
     }
 }

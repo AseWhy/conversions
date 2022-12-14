@@ -3,7 +3,7 @@ package io.github.asewhy.conversions;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.asewhy.conversions.support.CallbackNameStrategy;
 import io.github.asewhy.conversions.support.ConversionConfiguration;
-import io.github.asewhy.conversions.support.naming.iConversionNamingStrategy;
+import io.github.asewhy.conversions.support.naming.ConversionNamingStrategy;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +18,7 @@ public class ConversionConfigurationInternal {
     private final ObjectMapper objectMapper;
     private final ConversionStore store;
     private final CallbackNameStrategy callbackNameStrategy;
-    private final iConversionNamingStrategy namingStrategy;
+    private final ConversionNamingStrategy namingStrategy;
 
     @NotNull
     private final ConversionConfiguration config;
