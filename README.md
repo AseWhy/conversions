@@ -1,7 +1,7 @@
 # Conversions
 
 Небольшой модуль для конвертации сущностей в DTO. Конвертация происходит за счет рефлексии. Для начала работы с модулем
-необходимо настроить сканирование компонентов, для чего нужно создать бин iConversionConfiguration любым удобным способом. Для
+необходимо настроить сканирование компонентов, для чего нужно создать бин ConversionConfiguration любым удобным способом. Для
 автоматического сканирования компонентов приложения нужно установить EnableConversions аннотацию в любую точку конфигурации
 приложения.
 
@@ -11,15 +11,15 @@
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.asewhy.conversions.ConversionStore;
 import io.github.asewhy.conversions.support.annotations.EnableConversions;
-import io.github.asewhy.conversions.support.iConversionConfiguration;
-import io.github.asewhy.conversions.support.naming.iConversionNamingStrategy;
+import io.github.asewhy.conversions.support.ConversionConfiguration;
+import io.github.asewhy.conversions.support.naming.ConversionNamingStrategy;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 @EnableConversions
-public class ConversionConfig implements iConversionConfiguration {
+public class ConversionConfig implements ConversionConfiguration {
     @Autowired
     protected ObjectMapper objectMapper;
     @Autowired
@@ -55,13 +55,13 @@ public class ConversionConfig implements iConversionConfiguration {
 Если необходима собственная политика именования сущностей, то необходимо предоставить её в методе конфигурации `namingPolicy`. Пример измененной конфигурации показан ниже:
 
 ```java
-public class ConversionConfig implements iConversionConfiguration {
+public class ConversionConfig implements ConversionConfiguration {
     // ...
     @Autowired
     protected ConversionNamingStrategy conversionNamingStrategy;
 
     @Override
-    public iConversionNamingStrategy namingStrategy() {
+    public ConversionNamingStrategy namingStrategy() {
         return conversionNamingStrategy;
     }
 
@@ -107,7 +107,7 @@ public class ConversionNamingStrategy extends ExtrudableNamingStrategy {
 }
 ```
 
-В примере показана работа с конкретно `ExtrudableNamingStrategy` классом, но никто не запрещает реализовать свою логику используя `iConversionNamingStrategy`;
+В примере показана работа с конкретно `ExtrudableNamingStrategy` классом, но никто не запрещает реализовать свою логику используя `ConversionNamingStrategy`;
 
 ## Конвертация сущностей
 
