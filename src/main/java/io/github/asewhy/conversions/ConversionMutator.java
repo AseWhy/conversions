@@ -3,7 +3,7 @@ package io.github.asewhy.conversions;
 import io.github.asewhy.ReflectionUtils;
 import io.github.asewhy.conversions.exceptions.StoreNotFoundException;
 import io.github.asewhy.conversions.support.annotations.MutatorExcludes;
-import io.github.asewhy.conversions.support.iBound;
+import io.github.asewhy.conversions.support.Bound;
 import lombok.extern.log4j.Log4j2;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -197,15 +197,15 @@ public abstract class ConversionMutator<T> {
         return fill;
     }
 
-    public boolean requireProcessField(@NotNull iBound bound, Object context, T fill) {
+    public boolean requireProcessField(@NotNull Bound bound, Object context, T fill) {
         return !bound.isAnnotated(MutatorExcludes.class);
     }
 
-    public boolean requireProcessNested(iBound bound, Object found) {
+    public boolean requireProcessNested(Bound bound, Object found) {
         return true;
     }
 
-    public final boolean hasField(@NotNull iBound field) {
+    public final boolean hasField(@NotNull Bound field) {
         return hasField(field.getPureName());
     }
 

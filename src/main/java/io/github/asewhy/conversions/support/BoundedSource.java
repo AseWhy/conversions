@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 
 @AllArgsConstructor
 @SuppressWarnings("unchecked")
-public class BoundedSource implements iBound {
+public class BoundedSource implements Bound {
     private final AccessibleObject accessible;
     private final Map<Class<? extends Annotation>, Annotation> annotations;
 

@@ -7,12 +7,11 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Collection;
-import java.util.Set;
 
 /**
  * Основной оперируемый интерфейс обертки для полей конвертации, используется для упрощения операций с заполнением полей
  */
-public interface iBound {
+public interface Bound {
     boolean isSource();
     boolean isReceiver();
     boolean isMethod();

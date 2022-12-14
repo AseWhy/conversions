@@ -14,7 +14,7 @@ import io.github.asewhy.conversions.config.entities.ExampleTestAuthorEntity;
 import io.github.asewhy.conversions.config.entities.ExampleTestBookEntity;
 import io.github.asewhy.conversions.config.entities.ExampleTestBookInterfaceA;
 import io.github.asewhy.conversions.config.entities.ExampleTestPointEntity;
-import io.github.asewhy.conversions.config.support.IExampleTestBook;
+import io.github.asewhy.conversions.config.support.ExampleTestBook;
 import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.junit.jupiter.api.DisplayName;
@@ -119,8 +119,8 @@ public class ConversionsResponseTest {
     @Test
     @DisplayName("Тест конвертации сущностей с использованием общего интерфейса")
     public void convertInterfaceToDto() {
-        var bookA = (IExampleTestBook) new ExampleTestBookInterfaceA(faker.book().title(), "978-3-16-148410-0", "fantastic");
-        var bookB = (IExampleTestBook) new ExampleTestBookInterfaceA(faker.book().title(), "978-3-16-148410-1", "history");
+        var bookA = (ExampleTestBook) new ExampleTestBookInterfaceA(faker.book().title(), "978-3-16-148410-0", "fantastic");
+        var bookB = (ExampleTestBook) new ExampleTestBookInterfaceA(faker.book().title(), "978-3-16-148410-1", "history");
 
         var stamp = System.currentTimeMillis();
         var resultA = (ExampleTestBookInterfaceResponse) provider.createResponse(bookA);

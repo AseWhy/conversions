@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.asewhy.conversions.ConversionStore;
 import io.github.asewhy.conversions.support.naming.iConversionNamingStrategy;
 
-public interface iConversionConfiguration {
+public interface ConversionConfiguration {
     /**
      * Функция поставщик стора
      *

@@ -12,7 +12,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @SuppressWarnings("unchecked")
-public class BoundedReceiver implements iBound {
+public class BoundedReceiver implements Bound {
     private final AccessibleObject accessible;
     private final Map<Class<? extends Annotation>, Annotation> annotations;
 

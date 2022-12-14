@@ -1,10 +1,8 @@
 package io.github.asewhy.conversions;
 
-import io.github.asewhy.conversions.support.iBound;
+import io.github.asewhy.conversions.support.Bound;
 import lombok.extern.log4j.Log4j2;
 import org.jetbrains.annotations.NotNull;
-
-import java.lang.reflect.Field;
 
 /**
  * Конвертируемый мутатор сервиса
@@ -23,12 +21,12 @@ public abstract class ConversionContextMutator<T, C> extends ConversionMutator<T
         // Do something here...
     }
 
-    protected boolean requirePureProcessField(@NotNull iBound field, C context, T fill) {
+    protected boolean requirePureProcessField(@NotNull Bound field, C context, T fill) {
         return super.requireProcessField(field, context, fill);
     }
 
     @Override
-    public boolean requireProcessField(@NotNull iBound field, Object context, T fill) {
+    public boolean requireProcessField(@NotNull Bound field, Object context, T fill) {
         return requirePureProcessField(field, (C) context, fill);
     }
 

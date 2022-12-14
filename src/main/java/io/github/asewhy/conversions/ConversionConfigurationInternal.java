@@ -2,7 +2,7 @@ package io.github.asewhy.conversions;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.asewhy.conversions.support.CallbackNameStrategy;
-import io.github.asewhy.conversions.support.iConversionConfiguration;
+import io.github.asewhy.conversions.support.ConversionConfiguration;
 import io.github.asewhy.conversions.support.naming.iConversionNamingStrategy;
 import lombok.Getter;
 import org.jetbrains.annotations.NotNull;
@@ -21,10 +21,10 @@ public class ConversionConfigurationInternal {
     private final iConversionNamingStrategy namingStrategy;
 
     @NotNull
-    private final iConversionConfiguration config;
+    private final ConversionConfiguration config;
 
     @Autowired
-    public ConversionConfigurationInternal(@NotNull iConversionConfiguration config) {
+    public ConversionConfigurationInternal(@NotNull ConversionConfiguration config) {
         this.objectMapper = config.objectMapper().copy();
         this.namingStrategy = config.namingStrategy();
         this.callbackNameStrategy = new CallbackNameStrategy(namingStrategy);

@@ -1,6 +1,6 @@
 package io.github.asewhy.conversions.config.entities;
 
-import io.github.asewhy.conversions.config.support.IExampleTestBook;
+import io.github.asewhy.conversions.config.support.ExampleTestBook;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
@@ -10,7 +10,7 @@ import lombok.ToString;
 @Setter
 @ToString
 @AllArgsConstructor
-public class ExampleTestBookInterfaceB implements IExampleTestBook {
+public class ExampleTestBookInterfaceB implements ExampleTestBook {
     public String name;
     public String isbin;
     public Integer pageCount;

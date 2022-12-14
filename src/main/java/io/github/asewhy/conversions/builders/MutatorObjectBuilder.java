@@ -2,11 +2,11 @@ package io.github.asewhy.conversions.builders;
 
 import io.github.asewhy.conversions.ConversionMutator;
 import io.github.asewhy.conversions.ConversionProvider;
-import io.github.asewhy.conversions.support.iBuildable;
+import io.github.asewhy.conversions.support.Buildable;
 
 import java.util.HashMap;
 
-public class MutatorObjectBuilder<P extends iBuildable> extends HashMap<String, Object> implements iBuildable {
+public class MutatorObjectBuilder<P extends Buildable> extends HashMap<String, Object> implements Buildable {
     private final ConversionProvider provider;
     private final P root;
 

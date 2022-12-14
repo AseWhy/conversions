@@ -167,7 +167,7 @@ public class SomeSourceObjectDTO extends ConversionResponse<SomeSourceObject> {
 интерфейс в одну сущность ответа. Пример можно увидеть ниже:
 
 ```java
-public interface IExampleTestBook {
+public interface ExampleTestBook {
     String getName();
     String getIsbin();
 }
@@ -178,7 +178,7 @@ public interface IExampleTestBook {
 @Setter
 @ToString
 @AllArgsConstructor
-public class ExampleTestBookInterfaceA implements IExampleTestBook {
+public class ExampleTestBookInterfaceA implements ExampleTestBook {
     private String name;
     private String isbin;
     private String genre;
@@ -190,7 +190,7 @@ public class ExampleTestBookInterfaceA implements IExampleTestBook {
 @Setter
 @ToString
 @AllArgsConstructor
-public class ExampleTestBookInterfaceB implements IExampleTestBook {
+public class ExampleTestBookInterfaceB implements ExampleTestBook {
     private String name;
     private String isbin;
     private Integer pageCount;
@@ -202,13 +202,13 @@ public class ExampleTestBookInterfaceB implements IExampleTestBook {
 @Setter
 @ToString
 @ResponseDTO
-public class ExampleTestBookInterfaceResponse extends ConversionResponse<IExampleTestBook> {
+public class ExampleTestBookInterfaceResponse extends ConversionResponse<ExampleTestBook> {
     private String name;
     private String isbin;
 }
 ```
 
-Пример выше скажет конвертеру конвертировать все экземпляры `IExampleTestBook` в `ExampleTestBookInterfaceResponse`
+Пример выше скажет конвертеру конвертировать все экземпляры `ExampleTestBook` в `ExampleTestBookInterfaceResponse`
 
 ### Конвертация запроса
 
