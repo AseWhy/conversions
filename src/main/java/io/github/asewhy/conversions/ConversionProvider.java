@@ -70,7 +70,7 @@ public class ConversionProvider {
                 var result = objectMapper.treeToValue(node, fromClass);
 
                 if (store.isPresentMutator(fromClass) && result instanceof ConversionMutator<?>) {
-                    createMutator((ConversionMutator<?>) result, objectMapper.treeToValue(node, Map.class));
+                    createMutator((ConversionMutator<?>) result, node);
                 } else {
                     return null;
                 }
@@ -89,7 +89,7 @@ public class ConversionProvider {
      * @param mirror набор отражений
      * @param <T> Тип мутатора
      */
-    public <T extends ConversionMutator<?>> void createMutator(T from, Map<String, Object> mirror) {
+    public <T extends ConversionMutator<?>> void createMutator(T from, JsonNode mirror) {
         if(from == null) {
             return;
         }
@@ -102,12 +102,12 @@ public class ConversionProvider {
         var metadata = store.getMutatorBound(clazz);
         var founds = metadata.getFound();
 
-        from.touchedFields.addAll(mirror.keySet());
+        mirror.fieldNames().forEachRemaining(from.touchedFields::add);
 
         for (var current: founds) {
             var jsonName = namingStrategy.convert(current.getPureName(), current.getType());
 
-            if (mirror.containsKey(jsonName)) {
+            if (mirror.has(jsonName)) {
                 var mirrorValue = mirror.get(jsonName);
                 var found = current.getComputedResult(from);
 
@@ -117,18 +117,17 @@ public class ConversionProvider {
 
                 if (
                     found instanceof ConversionMutator<?> &&
-                    found.getClass() != clazz && mirrorValue instanceof Map<?, ?>
+                    found.getClass() != clazz && mirrorValue.isObject()
                 ) {
-                    createMutator((ConversionMutator<?>) found, (Map<String, Object>) mirrorValue);
+                    createMutator((ConversionMutator<?>) found, mirrorValue);
                 }
 
                 if (found instanceof Collection<?> ) {
                     var collection = (Collection<?>) found;
                     var foundIterator = collection.iterator();
 
-                    if (mirrorValue instanceof Collection<?>) {
-                        var receivedCollection = (Collection<?>) mirrorValue;
-                        var mirrorIterator = receivedCollection.iterator();
+                    if (mirrorValue.isArray()) {
+                        var mirrorIterator = mirrorValue.elements();
 
                         if (foundIterator.hasNext() && mirrorIterator.hasNext()) {
                             var currentFound = foundIterator.next();
@@ -139,7 +138,7 @@ public class ConversionProvider {
                                 currentFound.getClass() != clazz &&
                                 currentMirror instanceof Map<?, ?>
                             ) {
-                                createMutator((ConversionMutator<?>) currentFound, (Map<String, Object>) currentMirror);
+                                createMutator((ConversionMutator<?>) currentFound, currentMirror);
                             }
                         }
                     }

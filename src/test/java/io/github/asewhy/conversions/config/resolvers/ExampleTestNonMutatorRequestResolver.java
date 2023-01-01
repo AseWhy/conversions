@@ -4,18 +4,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.github.asewhy.conversions.ConversionProvider;
 import io.github.asewhy.conversions.RequestResolver;
-import io.github.asewhy.conversions.config.converters.ExampleTestMutatorRequest;
 import io.github.asewhy.conversions.config.converters.ExampleTestNonMutatorRequest;
 import io.github.asewhy.conversions.support.annotations.DataResolver;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Type;
-import java.util.Map;
 
 @Component
 @DataResolver
-@SuppressWarnings("unchecked")
 public class ExampleTestNonMutatorRequestResolver extends RequestResolver<ExampleTestNonMutatorRequest> {
     @Override
     protected ExampleTestNonMutatorRequest resolveInternalRequest(
@@ -30,7 +27,7 @@ public class ExampleTestNonMutatorRequestResolver extends RequestResolver<Exampl
         try {
             var data = objectMapper.treeToValue(node, ExampleTestNonMutatorRequest.class);
 
-            provider.createMutator(data.getRequest(), objectMapper.treeToValue(node.get("request"), Map.class));
+            provider.createMutator(data.getRequest(), node.get("request"));
 
             return data;
         } catch (JsonProcessingException e) {

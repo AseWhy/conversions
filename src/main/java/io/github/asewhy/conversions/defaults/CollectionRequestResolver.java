@@ -12,8 +12,6 @@ import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Type;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
 
 @Component
 @DataResolver
@@ -26,33 +24,32 @@ public class CollectionRequestResolver extends RequestResolver<Collection<?>> {
         Type generics,
         @NotNull ConversionProvider provider
     ) {
+        if(!node.isArray()) {
+            return ReflectionUtils.makeCollectionInstance(fromClass);
+        }
+
         var config = provider.getConfig();
         var store = config.getStore();
         var objectMapper = config.getObjectMapper();
         var generic = ReflectionUtils.findXGeneric(generics, 0);
 
         try {
-            var result = objectMapper.treeToValue(node, fromClass);
-
             if(generic != null && store.isPresentMutator(generic)) {
-                var parsedGeneric = (Class<? extends ConversionMutator<?>>) generic;
-                var ghosts = ReflectionUtils.makeCollectionInstance(fromClass);
+                var collection = ReflectionUtils.makeCollectionInstance(fromClass);
 
-                for (var current : result) {
-                    if (current instanceof HashMap<?, ?>) {
-                        var mirror = (Map<?, ?>) current;
-                        var mutator = objectMapper.convertValue(mirror, parsedGeneric);
-                        var castedMirror = (Map<String, Object>) mirror;
+                for (var current: node) {
+                    var mutator = objectMapper.convertValue(current, (Class<? extends ConversionMutator<?>>) generic);
 
-                        provider.createMutator(mutator, castedMirror);
-
-                        ghosts.add(mutator);
+                    if (current.isObject()) {
+                        provider.createMutator(mutator, current);
                     }
+
+                    collection.add(mutator);
                 }
 
-                return ghosts;
+                return collection;
             } else {
-                return null;
+                return objectMapper.treeToValue(node, fromClass);
             }
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);

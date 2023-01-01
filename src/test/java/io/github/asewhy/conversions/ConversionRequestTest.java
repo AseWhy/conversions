@@ -89,5 +89,6 @@ public class ConversionRequestTest {
         Assertions.assertEquals(resolvedRequest.get(0).getPageCount(), pageCount);
         Assertions.assertEquals(resolvedRequest.get(0).getName(), name);
         Assertions.assertEquals(resolvedRequest.get(0).getIsbin(), isbin);
+        Assertions.assertEquals(resolvedRequest.get(0).getAvailableFields().size(), 3);
     }
 }

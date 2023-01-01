@@ -361,7 +361,7 @@ public class ExampleTestNonMutatorRequestResolver extends RequestResolver<Exampl
         try {
             var data = objectMapper.treeToValue(node, ExampleTestNonMutatorRequest.class);
 
-            provider.createMutator(data.getRequest(), objectMapper.treeToValue(node.get("request"), Map.class));
+            provider.createMutator(data.getRequest(), node.get("request"));
 
             return data;
         } catch (JsonProcessingException e) {
@@ -376,7 +376,7 @@ public class ExampleTestNonMutatorRequestResolver extends RequestResolver<Exampl
 }
 ```
 
-Обратите внимание что класс `ExampleTestNonMutatorRequest` не является мутатором.
+Обратите внимание, что класс `ExampleTestNonMutatorRequest` не является мутатором.
 
 ## Работа с контроллерами
 

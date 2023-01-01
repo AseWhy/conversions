@@ -1,5 +1,6 @@
 package io.github.asewhy.conversions.builders;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import io.github.asewhy.conversions.ConversionMutator;
 import io.github.asewhy.conversions.ConversionProvider;
 import io.github.asewhy.conversions.support.Buildable;
@@ -38,11 +39,18 @@ public class MutatorObjectBuilder<P extends Buildable> extends HashMap<String, O
     public <T extends ConversionMutator<?>> T build(Class<T> target) {
         if(root == null) {
             var config = provider.getConfig();
-            var result = (T) config.getObjectMapper().convertValue(this, target);
+            var mapper = config.getObjectMapper();
 
-            provider.createMutator(result, this);
+            try {
+                var tree = mapper.valueToTree(this);
+                var result = (T) mapper.treeToValue(tree, target);
 
-            return result;
+                provider.createMutator(result, tree);
+
+                return result;
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
         } else {
             return root.build(target);
         }

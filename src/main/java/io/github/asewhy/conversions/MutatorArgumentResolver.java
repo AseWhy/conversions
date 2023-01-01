@@ -23,9 +23,8 @@ public class MutatorArgumentResolver implements HandlerMethodArgumentResolver {
 
     @Override
     public boolean supportsParameter(@NotNull MethodParameter parameter) {
-        return
-            parameter.getParameterAnnotation(ConvertMutator.class) != null ||
-            parameter.getParameterAnnotation(ConvertRequest.class) != null;
+        return parameter.getParameterAnnotation(ConvertMutator.class) != null ||
+        parameter.getParameterAnnotation(ConvertRequest.class) != null;
     }
 
     @Override
@@ -44,9 +43,7 @@ public class MutatorArgumentResolver implements HandlerMethodArgumentResolver {
 
             if(parameter.getParameterAnnotation(ConvertMutator.class) != null) {
                 var type = parameter.getParameterType();
-                var generic = ReflectionUtils.findXGeneric(parameter.getGenericParameterType(), 0);
-
-                var resolvedRequest = provider.createRequestResolve(tree, type, generic);
+                var resolvedRequest = provider.createRequestResolve(tree, type, parameter.getGenericParameterType());
 
                 if(resolvedRequest != null) {
                     return validate(resolvedRequest, nativeWebRequest, binderFactory, parameter);
@@ -68,7 +65,7 @@ public class MutatorArgumentResolver implements HandlerMethodArgumentResolver {
 
             var bindingResult = binder.getBindingResult();
 
-            if (bindingResult.getErrorCount ()> 0) {
+            if (bindingResult.getErrorCount() > 0) {
                 throw new MethodArgumentNotValidException(parameter, bindingResult);
             }
         }
