@@ -1,5 +1,7 @@
 package io.github.asewhy.conversions;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import io.github.asewhy.ReflectionUtils;
 import io.github.asewhy.conversions.builders.MutatorObjectBuilder;
 import io.github.asewhy.conversions.support.annotations.ResponseDTO;
@@ -11,6 +13,7 @@ import org.springframework.stereotype.Service;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -33,6 +36,52 @@ public class ConversionProvider {
         return new MutatorObjectBuilder<>(this, null);
     }
 
+
+    /**
+     * Создать запрос из конвертируемого класса запроса
+     *
+     * @param node нода для разбора
+     * @param fromClass класс конвертируемого запроса
+     * @param generics дженерики класса
+     * @return конвертированный запрос
+     */
+    public Object createRequestResolve(JsonNode node, Class<?> fromClass, Type generics) {
+        return createRequestResolve(node, fromClass, generics, null);
+    }
+
+    /**
+     * Создать запрос из конвертируемого класса запроса
+     *
+     * @param node нода для разбора
+     * @param fromClass класс конвертируемого запроса
+     * @param generics дженерики класса
+     * @param context контекст
+     * @return конвертированный запрос
+     */
+    public Object createRequestResolve(JsonNode node, Class<?> fromClass, Type generics, Object context) {
+        var store = config.getStore();
+        var objectMapper = config.getObjectMapper();
+        var resolver = store.findRequestResolver(fromClass);
+
+        if(resolver != null && resolver.canProcess(fromClass, generics, this)) {
+            return resolver.resolveRequest(node, fromClass, generics, this, context);
+        } else {
+            try {
+                var result = objectMapper.treeToValue(node, fromClass);
+
+                if (store.isPresentMutator(fromClass) && result instanceof ConversionMutator<?>) {
+                    createMutator((ConversionMutator<?>) result, objectMapper.treeToValue(node, Map.class));
+                } else {
+                    return null;
+                }
+
+                return result;
+            } catch (JsonProcessingException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
     /**
      * Заполняет мутатор данными из
      *
@@ -51,7 +100,6 @@ public class ConversionProvider {
         var store = this.config.getStore();
         var namingStrategy = this.config.getNamingStrategy();
         var metadata = store.getMutatorBound(clazz);
-
         var founds = metadata.getFound();
 
         from.touchedFields.addAll(mirror.keySet());
@@ -69,8 +117,7 @@ public class ConversionProvider {
 
                 if (
                     found instanceof ConversionMutator<?> &&
-                    found.getClass() != clazz &&
-                    mirrorValue instanceof Map<?, ?>
+                    found.getClass() != clazz && mirrorValue instanceof Map<?, ?>
                 ) {
                     createMutator((ConversionMutator<?>) found, (Map<String, Object>) mirrorValue);
                 }
@@ -111,7 +158,7 @@ public class ConversionProvider {
      */
     public boolean canResolveResponse(Class<?> type, Type generics, String mapping) {
         var store = config.getStore();
-        var resolver = store.findResolver(type);
+        var resolver = store.findResponseResolver(type);
 
         if(resolver != null) {
             return resolver.canProcess(type, generics, this, mapping);
@@ -145,10 +192,10 @@ public class ConversionProvider {
         }
 
         var providedContext = config.getConfig().context();
+        var store = config.getStore();
         var castedContext = context != null ? context : providedContext;
         var type = ReflectionUtils.skipAnonClasses(from.getClass());
-        var store = config.getStore();
-        var resolver = store.findResolver(type);
+        var resolver = store.findResponseResolver(type);
 
         if(resolver != null) {
             var example = resolver.extractExample(from, mapping, castedContext);

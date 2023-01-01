@@ -1,9 +1,11 @@
 package io.github.asewhy.conversions.support.annotations;
 
+import io.github.asewhy.conversions.ResponseResolver;
+
 import java.lang.annotation.*;
 
 /**
- * Помечает класс как обработчик {@link io.github.asewhy.conversions.ConversionResolver} сущностей ответов
+ * Помечает класс как обработчик {@link ResponseResolver} сущностей ответов
  *
  * Аннотируемый компонент должен является компонентом spring
  */

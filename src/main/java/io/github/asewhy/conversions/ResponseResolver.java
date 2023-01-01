@@ -8,7 +8,7 @@ import java.lang.reflect.Type;
  * @param <T> тип сущности T ответ на которую регистрируем.
  */
 @SuppressWarnings({"unused", "unchecked"})
-public abstract class ConversionResolver<T> {
+public abstract class ResponseResolver<T> {
     /**
      * Произвести преобразование типа T
      *

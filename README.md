@@ -333,6 +333,51 @@ public class SomeSourceObjectMutatorDTO extends ConversionMutator<SomeSourceObje
 Таким образом поле `parentId` у мутатора `SomeSourceObjectMutatorDTO` будет заполнено родительским идентификатором, в случае
 если сущность будет вложенной.
 
+Может возникнуть ситуация когда мутатор будет вложенным объектом, тогда можно использовать кастомный ресолвер такого запроса. Например, 
+имеется класс `ExampleTestNonMutatorRequest` одним из полей которого будет мутатор `ExampleTestMutatorRequest`, для примера это может быть
+например поле `request`. Тогда ресолвер для этого запроса может быть таким:
+
+```java
+import com.fasterxml.jackson.databind.JsonNode;
+import io.github.asewhy.conversions.ConversionProvider;
+import io.github.asewhy.conversions.support.annotations.DataResolver;
+import org.springframework.stereotype.Component;
+
+import java.lang.reflect.Type;
+
+@Component
+@DataResolver
+public class ExampleTestNonMutatorRequestResolver extends RequestResolver<ExampleTestNonMutatorRequest> {
+    @Override
+    protected ExampleTestNonMutatorRequest resolveInternalRequest(
+        @NotNull JsonNode node,
+        Class<? extends ExampleTestNonMutatorRequest> fromClass,
+        Type generics,
+        @NotNull ConversionProvider provider
+    ) {
+        var config = provider.getConfig();
+        var objectMapper = config.getObjectMapper();
+
+        try {
+            var data = objectMapper.treeToValue(node, ExampleTestNonMutatorRequest.class);
+
+            provider.createMutator(data.getRequest(), objectMapper.treeToValue(node.get("request"), Map.class));
+
+            return data;
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    protected boolean canProcess(Class<?> from, Type generics, ConversionProvider provider) {
+        return ExampleTestNonMutatorRequest.class.isAssignableFrom(from);
+    }
+}
+```
+
+Обратите внимание что класс `ExampleTestNonMutatorRequest` не является мутатором.
+
 ## Работа с контроллерами
 
 На примере выше показан процесс декларации мутатора запроса, и объекта ответа. После декларации, его можно использовать в контроллере просто указав
@@ -388,7 +433,7 @@ public class CommentController {
 
 ```java
 import io.github.asewhy.conversions.ConversionProvider;
-import io.github.asewhy.conversions.ConversionResolver;
+import io.github.asewhy.conversions.ResponseResolver;
 import io.github.asewhy.conversions.support.annotations.DataResolver;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
@@ -399,18 +444,18 @@ import java.lang.reflect.Type;
 
 @Component
 @DataResolver
-public class RestPageResponseResolver extends ConversionResolver<RestPage<?>> {
+public class RestPageResponseResolver extends ResponseResolver<RestPage<?>> {
     @Override
     protected RestPage<?> resolveInternalResponse(
-        @NotNull RestPage<?> restPage,
-        Class<? extends RestPage<?>> aClass,
-        @NotNull ConversionProvider conversionProvider,
-        String mapping
+            @NotNull RestPage<?> restPage,
+            Class<? extends RestPage<?>> aClass,
+            @NotNull ConversionProvider conversionProvider,
+            String mapping
     ) {
         return new RestPage<>(
-            restPage.getFilter(),
-            restPage.getContent().parallelStream().map(conversionProvider::createResponse).toList(),
-            restPage.getTotalElements()
+                restPage.getFilter(),
+                restPage.getContent().parallelStream().map(conversionProvider::createResponse).toList(),
+                restPage.getTotalElements()
         );
     }
 

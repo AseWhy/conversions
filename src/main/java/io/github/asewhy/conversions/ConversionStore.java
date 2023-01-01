@@ -1,21 +1,17 @@
 package io.github.asewhy.conversions;
 
 import io.github.asewhy.ReflectionUtils;
-import io.github.asewhy.conversions.support.BoundedReceiver;
 import io.github.asewhy.conversions.support.BoundedSource;
-import io.github.asewhy.conversions.support.CaseUtil;
 import io.github.asewhy.conversions.support.ClassMetadata;
 import io.github.asewhy.conversions.support.annotations.*;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -26,20 +22,15 @@ import static io.github.asewhy.conversions.ConversionUtils.*;
 
 @Log4j2
 @Getter
+@NoArgsConstructor
 @SuppressWarnings({"unused", "unchecked"})
 public class ConversionStore {
     private final Map<Class<?>, ClassMetadata> mutatorsMap = new HashMap<>();
     private final Map<Class<?>, Map<String, ClassMetadata>> responseMap = new HashMap<>();
     private final Map<Class<?>, ConversionMapper<?>> mappersMap = new HashMap<>();
-    private final Map<Class<?>, ConversionResolver<?>> containerConverterMap = new HashMap<>();
+    private final Map<Class<?>, ResponseResolver<?>> responseResolverMap = new HashMap<>();
+    private final Map<Class<?>, RequestResolver<?>> requestResolverMap = new HashMap<>();
     private final Map<Class<?>, ConversionContextRecipient<?, ?>> contextRecipientMap = new HashMap<>();
-
-    /**
-     * Создать экземпляр стора
-     */
-    public ConversionStore() {
-
-    }
 
     /**
      * Создать экземпляр стора и загрузить сервисные компоненты из контекста приложения
@@ -75,8 +66,10 @@ public class ConversionStore {
             var type = current.getClass();
             var generic = ReflectionUtils.findXGeneric(type);
 
-            if(current instanceof ConversionResolver<?>) {
-                this.containerConverterMap.put(generic, (ConversionResolver<?>) current);
+            if(current instanceof ResponseResolver<?>) {
+                this.responseResolverMap.put(generic, (ResponseResolver<?>) current);
+            } else if(current instanceof RequestResolver<?>) {
+                this.requestResolverMap.put(generic, (RequestResolver<?>) current);
             }
 
             log.info("Initialize conversion resolver for " + generic);
@@ -468,14 +461,25 @@ public class ConversionStore {
     }
 
     /**
-     * Найти конвертер для конвертации по целевому типу
+     * Найти конвертер для конвертации ответа по целевому типу
      *
      * @param forClass класс для которого нужен конвертер
      * @param <T> целевой тип
      * @return конвертер
      */
-    public <T> ConversionResolver<T> findResolver(Class<? extends T> forClass) {
-        return (ConversionResolver<T>) ReflectionUtils.findOnClassMap(containerConverterMap, forClass);
+    public <T> ResponseResolver<T> findResponseResolver(Class<? extends T> forClass) {
+        return (ResponseResolver<T>) ReflectionUtils.findOnClassMap(responseResolverMap, forClass);
+    }
+
+    /**
+     * Найти конвертер для конвертации запроса по целевому типу
+     *
+     * @param forClass класс для которого нужен конвертер
+     * @param <T> целевой тип
+     * @return конвертер
+     */
+    public <T> RequestResolver<T> findRequestResolver(Class<? extends T> forClass) {
+        return (RequestResolver<T>) ReflectionUtils.findOnClassMap(requestResolverMap, forClass);
     }
 
     /**

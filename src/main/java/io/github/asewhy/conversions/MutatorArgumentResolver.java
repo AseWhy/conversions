@@ -17,7 +17,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.validation.Valid;
 import java.util.*;
 
-@SuppressWarnings("unchecked")
 @AllArgsConstructor
 public class MutatorArgumentResolver implements HandlerMethodArgumentResolver {
     private final ConversionProvider provider;
@@ -37,7 +36,6 @@ public class MutatorArgumentResolver implements HandlerMethodArgumentResolver {
         WebDataBinderFactory binderFactory
     ) throws Exception {
         var config = provider.getConfig();
-        var store = config.getStore();
         var objectMapper = config.getObjectMapper();
         var httpServletRequest = nativeWebRequest.getNativeRequest(HttpServletRequest.class);
 
@@ -46,42 +44,13 @@ public class MutatorArgumentResolver implements HandlerMethodArgumentResolver {
 
             if(parameter.getParameterAnnotation(ConvertMutator.class) != null) {
                 var type = parameter.getParameterType();
-                var result = objectMapper.treeToValue(tree, type);
+                var generic = ReflectionUtils.findXGeneric(parameter.getGenericParameterType(), 0);
 
-                if(result instanceof Collection<?>) {
-                    var collection = (Collection<?>) result;
-                    var generic = ReflectionUtils.findXGeneric(parameter.getGenericParameterType(), 0);
+                var resolvedRequest = provider.createRequestResolve(tree, type, generic);
 
-                    if(generic != null && store.isPresentMutator(generic)) {
-                        var parsedGeneric = (Class<? extends ConversionMutator<?>>) generic;
-                        var ghosts = ReflectionUtils.makeCollectionInstance(type);
-
-                        for (var current : collection) {
-                            if (current instanceof HashMap<?, ?>) {
-                                var context = (Map<?, ?>) current;
-                                var mutator = objectMapper.convertValue(context, parsedGeneric);
-                                var castedContext = (Map<String, Object>) context;
-
-                                provider.createMutator(mutator, castedContext);
-
-                                ghosts.add(mutator);
-                            }
-                        }
-
-                        result = ghosts;
-                    }
-                } else {
-                    var parsed = objectMapper.treeToValue(tree, Map.class);
-
-                    if (
-                        store.isPresentMutator(parameter.getParameterType()) &&
-                        result instanceof ConversionMutator<?>
-                    ) {
-                        provider.createMutator((ConversionMutator<?>) result, parsed);
-                    }
+                if(resolvedRequest != null) {
+                    return validate(resolvedRequest, nativeWebRequest, binderFactory, parameter);
                 }
-
-                return validate(result, nativeWebRequest, binderFactory, parameter);
             } else {
                 return validate(objectMapper.treeToValue(tree, parameter.getParameterType()), nativeWebRequest, binderFactory, parameter);
             }
