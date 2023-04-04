@@ -4,15 +4,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.github.asewhy.conversions.ConversionProvider;
 import io.github.asewhy.conversions.RequestResolver;
-import io.github.asewhy.conversions.config.converters.ExampleTestNonMutatorRequest;
-import io.github.asewhy.conversions.support.annotations.DataResolver;
+import io.github.asewhy.conversions.config.converters.book.ExampleTestNonMutatorRequest;
+import io.github.asewhy.conversions.support.annotations.ContextLoadable;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Type;
 
 @Component
-@DataResolver
+@ContextLoadable
 public class ExampleTestNonMutatorRequestResolver extends RequestResolver<ExampleTestNonMutatorRequest> {
     @Override
     protected ExampleTestNonMutatorRequest resolveInternalRequest(

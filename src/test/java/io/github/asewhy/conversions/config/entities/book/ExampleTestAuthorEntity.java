@@ -1,4 +1,4 @@
-package io.github.asewhy.conversions.config.entities;
+package io.github.asewhy.conversions.config.entities.book;
 
 import lombok.Getter;
 import lombok.Setter;

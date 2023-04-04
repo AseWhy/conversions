@@ -1,19 +1,13 @@
 package io.github.asewhy.conversions;
 
-import io.github.asewhy.conversions.support.BoundedReceiver;
-import io.github.asewhy.conversions.support.BoundedSource;
-import io.github.asewhy.conversions.support.CaseUtil;
-import org.jetbrains.annotations.Contract;
+import io.github.asewhy.conversions.support.BoundedAccessible;
 import org.jetbrains.annotations.NotNull;
 
-import java.lang.annotation.Annotation;
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.util.HashSet;
+import java.util.Collection;
 import java.util.Locale;
-import java.util.Map;
-import java.util.Set;
 
 public class ConversionUtils {
     public final static String COMMON_MAPPING = "common";
@@ -41,70 +35,27 @@ public class ConversionUtils {
     /**
      * Получить биндинг получателя поля
      *
-     * @param methods карта с методами
-     * @param field поле для которого получаем биндинг
      * @return биндинг на метод или поле получателя
      */
-    @Contract("_, _ -> new")
-    protected static @NotNull BoundedReceiver getReceiverForField(@NotNull Map<String, Method> methods, @NotNull Field field) {
-        var methodName = "set" + CaseUtil.toPascalCase(field.getName());
-        var annotations = Set.of(field.getDeclaredAnnotations());
+    protected static BoundedAccessible getBoundForField(@NotNull Collection<AccessibleObject> objects) {
+        var field = (Field) null;
+        var setter = (Method) null;
+        var getter = (Method) null;
 
-        if(methods.containsKey(methodName)) {
-            var method = methods.get(methodName);
+        for(var current: objects) {
+            if(current instanceof Field && field == null) {
+                field = (Field) current;
+            } else if(current instanceof Method && setter == null) {
+                var method = (Method) current;
 
-            if(Modifier.isStatic(field.getModifiers())){
-                return new BoundedReceiver(field, annotations);
+                if(method.getName().startsWith("set")) {
+                    setter = method;
+                } else if(method.getName().startsWith("get")) {
+                    getter = method;
+                }
             }
-
-            if(method.getReturnType().isAssignableFrom(field.getType())) {
-                var mergedAnnotations = new HashSet<Annotation>();
-                var methodAnnotations = Set.of(method.getDeclaredAnnotations());
-
-                mergedAnnotations.addAll(annotations);
-                mergedAnnotations.addAll(methodAnnotations);
-
-                return new BoundedReceiver(method, mergedAnnotations);
-            } else {
-                return new BoundedReceiver(field, annotations);
-            }
-        } else {
-            return new BoundedReceiver(field, annotations);
         }
-    }
 
-    /**
-     * Получить биндинг источника поля
-     *
-     * @param methods карта с методами
-     * @param field поле для которого получаем биндинг
-     * @return биндинг на метод или поле источника
-     */
-    @Contract("_, _ -> new")
-    protected static @NotNull BoundedSource getSourceForField(@NotNull Map<String, Method> methods, @NotNull Field field) {
-        var methodName = "get" + CaseUtil.toPascalCase(field.getName());
-        var annotations = Set.of(field.getDeclaredAnnotations());
-
-        if(methods.containsKey(methodName)) {
-            var method = methods.get(methodName);
-
-            if(Modifier.isStatic(field.getModifiers())){
-                return new BoundedSource(field, annotations);
-            }
-
-            if(method.getReturnType().isAssignableFrom(field.getType())) {
-                var mergedAnnotations = new HashSet<Annotation>();
-                var methodAnnotations = Set.of(method.getDeclaredAnnotations());
-
-                mergedAnnotations.addAll(annotations);
-                mergedAnnotations.addAll(methodAnnotations);
-
-                return new BoundedSource(method, mergedAnnotations);
-            } else {
-                return new BoundedSource(field, annotations);
-            }
-        } else {
-            return new BoundedSource(field, annotations);
-        }
+        return new BoundedAccessible(field, getter, setter);
     }
 }

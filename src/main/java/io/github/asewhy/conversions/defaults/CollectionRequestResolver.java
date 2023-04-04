@@ -6,7 +6,7 @@ import io.github.asewhy.ReflectionUtils;
 import io.github.asewhy.conversions.ConversionMutator;
 import io.github.asewhy.conversions.ConversionProvider;
 import io.github.asewhy.conversions.RequestResolver;
-import io.github.asewhy.conversions.support.annotations.DataResolver;
+import io.github.asewhy.conversions.support.annotations.ContextLoadable;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 
@@ -14,7 +14,7 @@ import java.lang.reflect.Type;
 import java.util.Collection;
 
 @Component
-@DataResolver
+@ContextLoadable
 @SuppressWarnings("unchecked")
 public class CollectionRequestResolver extends RequestResolver<Collection<?>> {
     @Override

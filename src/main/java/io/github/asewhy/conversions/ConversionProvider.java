@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -89,7 +88,7 @@ public class ConversionProvider {
      * @param mirror набор отражений
      * @param <T> Тип мутатора
      */
-    public <T extends ConversionMutator<?>> void createMutator(T from, JsonNode mirror) {
+    public <T extends ConversionMutator<?>> void createMutator(T from, JsonNode mirror) throws JsonProcessingException {
         if(from == null) {
             return;
         }
@@ -99,25 +98,27 @@ public class ConversionProvider {
         var clazz = from.getClass();
         var store = this.config.getStore();
         var namingStrategy = this.config.getNamingStrategy();
+        var objectMapper = config.getObjectMapper();
         var metadata = store.getMutatorBound(clazz);
         var founds = metadata.getFound();
 
         mirror.fieldNames().forEachRemaining(from.touchedFields::add);
 
+        if(metadata.getIsMap()) {
+            return;
+        }
+
         for (var current: founds) {
-            var jsonName = namingStrategy.convert(current.getPureName(), current.getType());
+            var jsonName = namingStrategy.convert(current.getName(), current.getType());
 
             if (mirror.has(jsonName)) {
                 var mirrorValue = mirror.get(jsonName);
                 var found = current.getComputedResult(from);
-
-                if(metadata.getIsMap()) {
-                    continue;
-                }
+                var foundClass = found.getClass();
 
                 if (
                     found instanceof ConversionMutator<?> &&
-                    found.getClass() != clazz && mirrorValue.isObject()
+                    foundClass != clazz && mirrorValue.isObject()
                 ) {
                     createMutator((ConversionMutator<?>) found, mirrorValue);
                 }
@@ -273,7 +274,7 @@ public class ConversionProvider {
         var fromClass = ReflectionUtils.skipAnonClasses(from.getClass());
 
         if(applyMappingConversion) {
-            var resolver = (ConversionMapper<Object>) store.findMapper(fromClass);
+            var resolver = (ConversionResponseMapper<Object>) store.findResponseMapper(fromClass);
 
             if(resolver != null) {
                 mapping = resolver.resolveMapping(from, mapping);

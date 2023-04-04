@@ -3,8 +3,12 @@ package io.github.asewhy.conversions;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.javafaker.Faker;
 import io.github.asewhy.conversions.config.ConversationalTestConfiguration;
-import io.github.asewhy.conversions.config.converters.ExampleTestMutatorRequest;
-import io.github.asewhy.conversions.config.converters.ExampleTestNonMutatorRequest;
+import io.github.asewhy.conversions.config.converters.book.ExampleTestMutatorRequest;
+import io.github.asewhy.conversions.config.converters.book.ExampleTestNonMutatorRequest;
+import io.github.asewhy.conversions.config.converters.people.MutatorNissanMicra;
+import io.github.asewhy.conversions.config.converters.people.MutatorPeople;
+import io.github.asewhy.conversions.config.entities.people.NissanMicra;
+import io.github.asewhy.conversions.config.entities.people.People;
 import org.apache.commons.lang3.reflect.TypeUtils;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
@@ -90,5 +94,35 @@ public class ConversionRequestTest {
         Assertions.assertEquals(resolvedRequest.get(0).getName(), name);
         Assertions.assertEquals(resolvedRequest.get(0).getIsbin(), isbin);
         Assertions.assertEquals(resolvedRequest.get(0).getAvailableFields().size(), 3);
+    }
+
+    @Test
+    @DisplayName("Тест мапинга объекта мутатор в зависимости от поля корневого мутатора.")
+    @Description(
+        "Например возьмем класс People (человек). В котором есть поле gender. В завис мости от" +
+        " значения этого поля мы можем предположить какую машину выберет человек. Таким образом" +
+        " необходимо чтобы для поля man выбиралось Porche911 а для woman NissanMicra (данные взяты из инета)."
+    )
+    public void mapMutatorByGender() throws JsonProcessingException {
+        var config = provider.getConfig();
+        var objectMapper = config.getObjectMapper();
+        var tree = objectMapper.readTree(
+            "{\"gender\": \"woman\", \"car\": {" +
+                "\"micraSpecificProperty\":\"micraSpecificValue\"" +
+            "}}"
+        );
+
+        var resolvedRequest = (MutatorPeople) provider.createRequestResolve(tree, MutatorPeople.class, null);
+
+        Assertions.assertInstanceOf(MutatorPeople.class, resolvedRequest);
+        Assertions.assertInstanceOf(MutatorNissanMicra.class, resolvedRequest.getCar());
+
+        Assertions.assertEquals(resolvedRequest.getGender(), "woman");
+
+        var filled = resolvedRequest.fill(new People());
+
+        Assertions.assertEquals(filled.getGender(), "woman");
+        Assertions.assertInstanceOf(NissanMicra.class, filled.getCar());
+        Assertions.assertEquals(((NissanMicra) filled.getCar()).getMicraSpecificProperty(), "micraSpecificValue");
     }
 }

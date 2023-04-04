@@ -1,7 +1,5 @@
 package io.github.asewhy.conversions;
 
-import io.github.asewhy.conversions.support.annotations.DataMapper;
-
 /**
  * Допустим есть класс N и X для ответа на сущность T
  * Сущность S универсальная и в зависимости от определенных условий может быть преобразована в N или X
@@ -10,7 +8,7 @@ import io.github.asewhy.conversions.support.annotations.DataMapper;
  * @param <T> тип сущности T ответ на которую регистрируем.
  */
 @SuppressWarnings("unused")
-public abstract class ConversionMapper<T> {
+public abstract class ConversionResponseMapper<T> {
     /**
      * Функция разрешения названия маппинга для текущей пробразовываемой сущности. Т.е. строка, которую вернет этот
      * метод, будет являться новым маппингом для провайдера при поиске соответствующего конвертера типа ответа. Если тип ответа
@@ -19,7 +17,6 @@ public abstract class ConversionMapper<T> {
      * @param from объект переданный на преобразование в сущность ответа.
      * @param defaultMapping маппинг переданный по умолчанию (например если это вызов функции конверсии в ручном режиме,
      *                       и маппинг был передан руками или маппинг был указан как соответствующее свойство аннотации
-     *                       {@link DataMapper} или {@link io.github.asewhy.conversions.support.annotations.ShiftController}.)
      * @return конечный маппинг используемый поставщиком.
      */
     public String resolveMapping(T from, String defaultMapping) {
@@ -30,7 +27,7 @@ public abstract class ConversionMapper<T> {
      * Должен вернуть true если необходимо обновлять маппинг для каждой вложенной сущности
      * <p>
      * Допустим у сущности N есть зависимые сущности D и P которые преобразуются из поля x T сущности.
-     * В случае, если propagation T вернет true, то для сущности N будет найден {@link ConversionMapper}&lt;N&gt;
+     * В случае, если propagation T вернет true, то для сущности N будет найден {@link ConversionResponseMapper}&lt;N&gt;
      * с помощью которого будет выполнен повторный поиск маппинга для сущности N для преобразования в D или P
      * сущность ответа
      *

@@ -1,7 +1,7 @@
-package io.github.asewhy.conversions.config.converters;
+package io.github.asewhy.conversions.config.converters.book;
 
 import io.github.asewhy.conversions.ConversionResponse;
-import io.github.asewhy.conversions.config.entities.ExampleTestAuthorEntity;
+import io.github.asewhy.conversions.config.entities.book.ExampleTestAuthorEntity;
 import io.github.asewhy.conversions.support.annotations.ResponseDTO;
 import lombok.Getter;
 import lombok.Setter;

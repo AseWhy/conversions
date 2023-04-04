@@ -340,20 +340,18 @@ public class SomeSourceObjectMutatorDTO extends ConversionMutator<SomeSourceObje
 ```java
 import com.fasterxml.jackson.databind.JsonNode;
 import io.github.asewhy.conversions.ConversionProvider;
-import io.github.asewhy.conversions.support.annotations.DataResolver;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Type;
 
 @Component
-@DataResolver
 public class ExampleTestNonMutatorRequestResolver extends RequestResolver<ExampleTestNonMutatorRequest> {
     @Override
     protected ExampleTestNonMutatorRequest resolveInternalRequest(
-        @NotNull JsonNode node,
-        Class<? extends ExampleTestNonMutatorRequest> fromClass,
-        Type generics,
-        @NotNull ConversionProvider provider
+            @NotNull JsonNode node,
+            Class<? extends ExampleTestNonMutatorRequest> fromClass,
+            Type generics,
+            @NotNull ConversionProvider provider
     ) {
         var config = provider.getConfig();
         var objectMapper = config.getObjectMapper();
@@ -434,7 +432,6 @@ public class CommentController {
 ```java
 import io.github.asewhy.conversions.ConversionProvider;
 import io.github.asewhy.conversions.ResponseResolver;
-import io.github.asewhy.conversions.support.annotations.DataResolver;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -443,7 +440,6 @@ import paa.coder.noodleCriteriaBuilder.restFilter.payloads.RestPage;
 import java.lang.reflect.Type;
 
 @Component
-@DataResolver
 public class RestPageResponseResolver extends ResponseResolver<RestPage<?>> {
     @Override
     protected RestPage<?> resolveInternalResponse(

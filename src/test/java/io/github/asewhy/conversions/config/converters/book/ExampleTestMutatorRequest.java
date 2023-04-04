@@ -1,7 +1,7 @@
-package io.github.asewhy.conversions.config.converters;
+package io.github.asewhy.conversions.config.converters.book;
 
 import io.github.asewhy.conversions.ConversionMutator;
-import io.github.asewhy.conversions.config.entities.ExampleTestBookEntity;
+import io.github.asewhy.conversions.config.entities.book.ExampleTestBookEntity;
 import io.github.asewhy.conversions.support.annotations.MutatorDTO;
 import lombok.Getter;
 import lombok.Setter;

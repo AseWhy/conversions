@@ -2,16 +2,14 @@ package io.github.asewhy.conversions;
 
 import io.github.asewhy.ReflectionUtils;
 import io.github.asewhy.conversions.exceptions.StoreNotFoundException;
-import io.github.asewhy.conversions.support.annotations.MutatorExcludes;
 import io.github.asewhy.conversions.support.Bound;
+import io.github.asewhy.conversions.support.annotations.MutatorExcludes;
 import lombok.extern.log4j.Log4j2;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.UnmodifiableView;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -32,6 +30,10 @@ public abstract class ConversionMutator<T> {
      * @param internal хранилище типов
      */
     protected void registerStore(@NotNull ConversionConfigurationInternal internal) {
+        if(this.config != null) {
+            throw new UnsupportedOperationException("Cannot register store second time.");
+        }
+
         this.config = internal;
     }
 
@@ -117,12 +119,18 @@ public abstract class ConversionMutator<T> {
                 if(requireProcessField(found, context, fill)) {
                     var received = found.getComputedResult(this);
 
-                    if(received != null) {
+                    if(received != null && bound.isFullfilled()) {
                         var exists = bound.getComputedResult(fill);
 
-                        if(received instanceof ConversionMutator && requireProcessNested(found, received)) {
+                        if(
+                            received instanceof ConversionMutator &&
+                            requireProcessNested(found, received)
+                        ) {
                             if(exists == null) {
-                                exists = ReflectionUtils.safeInstance(boundType);
+                                var mutatorClass = received.getClass();
+                                var mutatorMetadata = store.getMutatorBound(mutatorClass);
+
+                                exists = ReflectionUtils.safeInstance(mutatorMetadata.getBoundClass());
                             }
 
                             var mutator = (ConversionMutator<Object>) received;
@@ -184,7 +192,7 @@ public abstract class ConversionMutator<T> {
                     }
 
                     if(fill instanceof Map) {
-                        ((Map<Object, Object>) fill).put(found.getPureName(), received);
+                        ((Map<Object, Object>) fill).put(found.getName(), received);
                     } else {
                         bound.setComputedResult(fill, received);
                     }
@@ -206,7 +214,11 @@ public abstract class ConversionMutator<T> {
     }
 
     public final boolean hasField(@NotNull Bound field) {
-        return hasField(field.getPureName());
+        return hasField(field.getName());
+    }
+
+    public final boolean hasField(String name) {
+        return touchedFields.contains(convertFieldName(name));
     }
 
     public final @NotNull String convertFieldName(String name) {
@@ -226,13 +238,9 @@ public abstract class ConversionMutator<T> {
         }
     }
 
-    public final boolean hasField(String name) {
-        return touchedFields.contains(convertFieldName(name));
-    }
-
     @Contract(" -> new")
-    public final @NotNull Set<String> getAvailableFields() {
-        return new HashSet<>(this.touchedFields);
+    public final @NotNull @UnmodifiableView Set<String> getAvailableFields() {
+        return Collections.unmodifiableSet(this.touchedFields);
     }
 
     protected void fillParentInternal(T fill, Object parent, Object context) {

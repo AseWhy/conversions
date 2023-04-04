@@ -65,7 +65,7 @@ public class ClassMetadata {
     public void addBound(Bound bound) {
         if(bound != null) {
             this.bound.add(bound);
-            this.boundFieldsNameMap.put(bound.getPureName(), bound);
+            this.boundFieldsNameMap.put(bound.getName(), bound);
         }
     }
 }

@@ -50,9 +50,9 @@ public final class ResponseMessageHandler extends RequestResponseBodyMethodProce
         @NotNull NativeWebRequest webRequest
     ) throws HttpMediaTypeNotAcceptableException, IOException {
         var httpServletRequest = webRequest.getNativeResponse(HttpServletResponse.class);
+        var converted = returnValue;
 
         if(httpServletRequest != null) {
-            var converted = returnValue;
             var mapping = getMappingName(returnType);
 
             if(canProcess(returnType, mapping)) {
@@ -62,9 +62,9 @@ public final class ResponseMessageHandler extends RequestResponseBodyMethodProce
                     log.warn("IS NOT A CONVERTIBLE ENTITY " + returnType.getParameterType());
                 }
             }
-
-            super.handleReturnValue(converted, returnType, mavContainer, webRequest);
         }
+
+        super.handleReturnValue(converted, returnType, mavContainer, webRequest);
     }
 
     /**

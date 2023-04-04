@@ -1,7 +1,7 @@
 package io.github.asewhy.conversions;
 
 import io.github.asewhy.ReflectionUtils;
-import io.github.asewhy.conversions.support.BoundedSource;
+import io.github.asewhy.conversions.support.Bound;
 import io.github.asewhy.conversions.support.ClassMetadata;
 import io.github.asewhy.conversions.support.annotations.*;
 import lombok.Getter;
@@ -27,7 +27,7 @@ import static io.github.asewhy.conversions.ConversionUtils.*;
 public class ConversionStore {
     private final Map<Class<?>, ClassMetadata> mutatorsMap = new HashMap<>();
     private final Map<Class<?>, Map<String, ClassMetadata>> responseMap = new HashMap<>();
-    private final Map<Class<?>, ConversionMapper<?>> mappersMap = new HashMap<>();
+    private final Map<Class<?>, ConversionResponseMapper<?>> responseMappersMap = new HashMap<>();
     private final Map<Class<?>, ResponseResolver<?>> responseResolverMap = new HashMap<>();
     private final Map<Class<?>, RequestResolver<?>> requestResolverMap = new HashMap<>();
     private final Map<Class<?>, ConversionContextRecipient<?, ?>> contextRecipientMap = new HashMap<>();
@@ -47,24 +47,13 @@ public class ConversionStore {
      * @param context контекст приложения
      */
     public void loadContext(@NotNull ApplicationContext context) {
-        var mappers = context.getBeansWithAnnotation(DataMapper.class).values();
-        var resolvers = context.getBeansWithAnnotation(DataResolver.class).values();
-        var recipients = context.getBeansWithAnnotation(ContextRecipient.class).values();
-
-        for(var current: mappers) {
+        for(var current: context.getBeansWithAnnotation(ContextLoadable.class).values()) {
             var type = current.getClass();
             var generic = ReflectionUtils.findXGeneric(type);
 
-            if(current instanceof ConversionMapper<?>) {
-                this.mappersMap.put(generic, (ConversionMapper<?>) current);
+            if(current instanceof ConversionResponseMapper<?>) {
+                this.responseMappersMap.put(generic, (ConversionResponseMapper<?>) current);
             }
-
-            log.info("Initialize conversion mapper for " + generic);
-        }
-
-        for(var current: resolvers) {
-            var type = current.getClass();
-            var generic = ReflectionUtils.findXGeneric(type);
 
             if(current instanceof ResponseResolver<?>) {
                 this.responseResolverMap.put(generic, (ResponseResolver<?>) current);
@@ -72,18 +61,9 @@ public class ConversionStore {
                 this.requestResolverMap.put(generic, (RequestResolver<?>) current);
             }
 
-            log.info("Initialize conversion resolver for " + generic);
-        }
-
-        for(var current: recipients) {
-            var type = current.getClass();
-            var generic = ReflectionUtils.findXGeneric(type, 0);
-
             if(current instanceof ConversionContextRecipient<?, ?>) {
                 this.contextRecipientMap.put(generic, (ConversionContextRecipient<?, ?>) current);
             }
-
-            log.info("Initialize conversion context recipients for " + generic);
         }
     }
 
@@ -147,7 +127,6 @@ public class ConversionStore {
 
         scanner.addIncludeFilter(new AnnotationTypeFilter(MutatorDTO.class));
         scanner.addIncludeFilter(new AnnotationTypeFilter(ResponseDTO.class));
-        scanner.addIncludeFilter(new AnnotationTypeFilter(DataMapper.class));
 
         for(var current: scanner.findCandidateComponents(packageName)) {
             try {
@@ -212,88 +191,45 @@ public class ConversionStore {
         var boundMethods = ReflectionUtils.scanMethodsToMap(response);
         var foundSuffix = target.isInterface() ? "[Interface]" : Map.class.isAssignableFrom(target) ? "[Map]" : "[Pure]";
 
+        var foundData = requestAllAccessibleData(foundFields.values(), foundMethods.values());
+        var boundData = requestAllAccessibleData(boundFields.values(), boundMethods.values());
+
         metadata.setBoundClass(response);
         metadata.setIsMap(Map.class.isAssignableFrom(target));
 
         log.info("Register conversion response from {} to {} {}", target.getSimpleName(), response.getSimpleName(), foundSuffix);
 
-        if(target.isInterface()) {
-            for (var current : foundMethods.entrySet()) {
-                var found = current.getValue();
-                var pureFieldName = getPureName(current.getKey());
-                var bound = boundFields.get(pureFieldName);
+        for(var current: foundData.entrySet()) {
+            var found = current.getValue();
+            var foundSource = getBoundForField(found);
 
-                if (Modifier.isStatic(found.getModifiers())) {
-                    continue;
-                }
-
-                var foundSource = new BoundedSource(found, Set.of(found.getDeclaredAnnotations()));
-
-                if (bound != null) {
-                    if (Modifier.isStatic(bound.getModifiers())) {
-                        continue;
-                    }
-
-                    var foundType = found.getReturnType();
-                    var boundType = bound.getType();
-
-                    if (
-                        boundType == foundType && (
-                            !Collection.class.isAssignableFrom(foundType) || isConventionalCollection(found, bound)
-                        ) ||
-                        isConverterOwn(found, boundType) &&
-                        ConversionResponse.class.isAssignableFrom(boundType)
-                    ) {
-                        fieldsFound.put(foundSource, getReceiverForField(boundMethods, bound));
-                    }
-
-                    fieldsTotal.add(foundSource);
-                } else if (metadata.getIsMap() || found.getAnnotation(IgnoreMatch.class) != null) {
-                    fieldsTotal.add(foundSource);
-                }
-            }
-        } else {
-            for (var current : foundFields.entrySet()) {
-                var found = current.getValue();
-                var bound = boundFields.get(current.getKey());
-
-                if (Modifier.isStatic(found.getModifiers())) {
-                    continue;
-                }
-
-                var foundSource = getSourceForField(foundMethods, found);
-
-                if (bound != null) {
-                    if (Modifier.isStatic(bound.getModifiers())) {
-                        continue;
-                    }
-
-                    var foundType = found.getType();
-                    var boundType = bound.getType();
-
-                    if (
-                        boundType == foundType && (
-                            !Collection.class.isAssignableFrom(foundType) || isConventionalCollection(found, bound)
-                        ) ||
-                        isConverterOwn(found, boundType) &&
-                        ConversionResponse.class.isAssignableFrom(boundType)
-                    ) {
-                        fieldsFound.put(foundSource, getReceiverForField(boundMethods, bound));
-                    }
-
-                    fieldsTotal.add(foundSource);
-                } else if (metadata.getIsMap() || found.getAnnotation(IgnoreMatch.class) != null) {
-                    fieldsTotal.add(foundSource);
-                }
-            }
-        }
-
-        for(var current: boundFields.values()) {
-            if(Modifier.isStatic(current.getModifiers())) {
+            if(!foundSource.isPresent()) {
                 continue;
             }
 
-            metadata.addBound(getReceiverForField(boundMethods, current));
+            if(boundData.containsKey(current.getKey())) {
+                var bound = boundData.get(current.getKey());
+                var boundSource = getBoundForField(bound);
+
+                if(!boundSource.isPresent()) {
+                    continue;
+                }
+
+                if (
+                    isConventionalOrCollection(foundSource, boundSource) ||
+                    isConverterOwn(foundSource, boundSource, ConversionResponse.class)
+                ) {
+                    fieldsFound.put(foundSource, boundSource);
+                }
+
+                fieldsTotal.add(foundSource);
+            } else if (metadata.getIsMap() || foundSource.isAnnotated(IgnoreMatch.class)) {
+                fieldsTotal.add(foundSource);
+            }
+        }
+
+        for(var current: boundData.values()) {
+            metadata.addBound(getBoundForField(current));
         }
 
         responseMap.put(target, metadataMap);
@@ -311,117 +247,90 @@ public class ConversionStore {
         var fieldsFound = metadata.getIntersect();
         var fieldsTotal = metadata.getFound();
 
-        var foundFields = ReflectionUtils.scanFieldsToMap(mutator);
+        var foundFields = ReflectionUtils.scanFieldsToMap(mutator, Set.of(ConversionMutator.class));
         var boundFields = ReflectionUtils.scanFieldsToMap(target);
-        var foundMethods = ReflectionUtils.scanMethodsToMap(mutator);
+        var foundMethods = ReflectionUtils.scanMethodsToMap(mutator, Set.of(ConversionMutator.class));
         var boundMethods = ReflectionUtils.scanMethodsToMap(target);
         var foundSuffix = target.isInterface() ? "[Interface]" : Map.class.isAssignableFrom(target) ? "[Map]" : "[Pure]";
+
+        var foundData = requestAllAccessibleData(foundFields.values(), foundMethods.values());
+        var boundData = requestAllAccessibleData(boundFields.values(), boundMethods.values());
 
         metadata.setBoundClass(target);
         metadata.setIsMap(Map.class.isAssignableFrom(target));
 
-        log.info("Register conversion mutator from {} to {} {}", mutator.getSimpleName(), target.getSimpleName(), foundSuffix);
+        for(var current: foundData.entrySet()) {
+            var found = current.getValue();
+            var foundSource = getBoundForField(found);
 
-        if(target.isInterface()) {
-            for (var current : foundMethods.entrySet()) {
-                var found = current.getValue();
-                var pureFieldName = getPureName(current.getKey());
-                var bound = boundFields.get(pureFieldName);
-
-                if (Modifier.isStatic(found.getModifiers())) {
-                    continue;
-                }
-
-                var foundSource = new BoundedSource(found, Set.of(found.getDeclaredAnnotations()));
-
-                if (bound != null) {
-                    if (Modifier.isStatic(bound.getModifiers())) {
-                        continue;
-                    }
-
-                    var foundType = found.getReturnType();
-                    var boundType = bound.getType();
-
-                    if (
-                        boundType == foundType && (
-                            !Collection.class.isAssignableFrom(foundType) ||
-                            isConventionalCollection(found, bound)
-                        ) ||
-                        isConverterOwn(found, boundType) &&
-                        ConversionResponse.class.isAssignableFrom(boundType)
-                    ) {
-                        fieldsFound.put(foundSource, getReceiverForField(boundMethods, bound));
-                    }
-
-                    fieldsTotal.add(foundSource);
-                } else if (metadata.getIsMap() || found.getAnnotation(IgnoreMatch.class) != null) {
-                    fieldsTotal.add(foundSource);
-                }
-            }
-        } else {
-            for(var current: foundFields.entrySet()) {
-                var found = current.getValue();
-                var bound = boundFields.get(current.getKey());
-
-                if(Modifier.isStatic(found.getModifiers())){
-                    continue;
-                }
-
-                var foundSource = getSourceForField(foundMethods, found);
-
-                if(bound != null) {
-                    if(Modifier.isStatic(bound.getModifiers())){
-                        continue;
-                    }
-
-                    var foundType = found.getType();
-                    var boundType = bound.getType();
-
-                    if(
-                        boundType == foundType && (
-                            !Collection.class.isAssignableFrom(foundType) ||
-                            isConventionalCollection(bound, found)
-                        ) ||
-                        isConverterOwn(bound, foundType) &&
-                        ConversionMutator.class.isAssignableFrom(foundType)
-                    ) {
-                        fieldsFound.put(foundSource, getReceiverForField(boundMethods, bound));
-                    }
-
-                    fieldsTotal.add(foundSource);
-                } else if(metadata.getIsMap() || found.getAnnotation(IgnoreMatch.class) != null) {
-                    fieldsTotal.add(foundSource);
-                }
-            }
-        }
-
-        for(var current: boundFields.values()) {
-            if(Modifier.isStatic(current.getModifiers())) {
+            if(!foundSource.isPresent()) {
                 continue;
             }
 
-            metadata.addBound(getReceiverForField(boundMethods, current));
+            if(boundData.containsKey(current.getKey())) {
+                var bound = boundData.get(current.getKey());
+                var boundSource = getBoundForField(bound);
+
+                if(!boundSource.isPresent()) {
+                    continue;
+                }
+
+                if(
+                    isConventionalOrCollection(boundSource, foundSource) ||
+                    isConverterOwn(boundSource, foundSource, ConversionMutator.class)
+                ) {
+                    fieldsFound.put(foundSource, boundSource);
+                }
+
+                fieldsTotal.add(foundSource);
+            } else if(metadata.getIsMap() || foundSource.isAnnotated(IgnoreMatch.class)) {
+                fieldsTotal.add(foundSource);
+            }
+        }
+
+        for(var current: boundData.values()) {
+            metadata.addBound(getBoundForField(current));
         }
 
         mutatorsMap.put(mutator, metadata);
     }
 
     /**
-     * Сравнивает подтипы двух коллекций
+     * Можно ли преобразовать после bnd1 в bnd2
      *
-     * @param compare найденное значение
-     * @param source значение для преобразования
+     * @param bnd1 найденное значение
+     * @param bnd2 значение для преобразования
      * @return true если коллекции можно конвертировать
      */
-    public boolean isConventionalCollection(AccessibleObject compare, Field source) {
-        var requireBeConverter = ReflectionUtils.findXGeneric(source);
+    public boolean isConventionalOrCollection(@NotNull Bound bnd1, @NotNull Bound bnd2) {
+        var boundType = bnd1.getType();
+        var foundType = bnd2.getType();
+
+        if(boundType == foundType) {
+            if(Collection.class.isAssignableFrom(boundType)) {
+                return isConventionalCollection(bnd1, bnd2);
+            } else {
+                return true;
+            }
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Можно ли сопоставить коллекцию bnd1 и bnd2
+     *
+     * @param bnd1 коллекция bnd1
+     * @param bnd2 коллекция bnd2
+     * @return true если можно
+     */
+    private static boolean isConventionalCollection(@NotNull Bound bnd1, @NotNull Bound bnd2) {
+        var requireBeConverter = bnd2.findXGeneric();
 
         if(requireBeConverter == null) {
             return false;
         } else {
-            var compareGeneric = compare instanceof Method ?
-                ReflectionUtils.findXGeneric((Method) compare) :
-                ReflectionUtils.findXGeneric((Field) compare);
+            var compareGeneric = bnd1.findXGeneric();
 
             if(compareGeneric != null && requireBeConverter == compareGeneric) {
                 return true;
@@ -438,23 +347,56 @@ public class ConversionStore {
     }
 
     /**
+     * Получить все доступные виртуальные поля целевого объекта
+     *
+     * @param fields набор полей
+     * @param methods набор методов
+     * @return карта, где ключ это название. А значение это список доступных полей
+     */
+    private @NotNull Map<String, Collection<AccessibleObject>> requestAllAccessibleData(@NotNull Collection<Field> fields, Collection<Method> methods) {
+        var result = new HashMap<String, Collection<AccessibleObject>>();
+
+        for(var current: fields) {
+            if(Modifier.isStatic(current.getModifiers())) {
+                continue;
+            }
+
+            result.computeIfAbsent(current.getName(), e -> new HashSet<>()).add(current);
+        }
+
+        for(var current: methods) {
+            var name = current.getName();
+            var pureName = ConversionUtils.getPureName(name);
+
+            if(Modifier.isStatic(current.getModifiers())) {
+                continue;
+            }
+
+            if(name.startsWith("set") || name.startsWith("get")) {
+                result.computeIfAbsent(pureName, e -> new HashSet<>()).add(current);
+            }
+        }
+
+        return result;
+    }
+
+    /**
      * Вернет true если это поле конвертера, для поля целевого класса
      *
      * @param found поле с конвертером
-     * @param boundClazz тип целевого поля
+     * @param bound целевое поле
      * @return true если истина
      */
-    public boolean isConverterOwn(AccessibleObject found, Class<?> boundClazz) {
-        var generic = ReflectionUtils.findXGeneric(boundClazz);
+    private boolean isConverterOwn(@NotNull Bound found, @NotNull Bound bound, Class<?> converterClazz) {
+        var type = bound.getType();
+        var generic = bound.findXGeneric();
+
+        if(generic == null) {
+            generic = ReflectionUtils.findXGeneric(type);
+        }
 
         if(generic != null) {
-            if(found instanceof Method) {
-                return generic.isAssignableFrom(((Method) found).getReturnType());
-            } else if(found instanceof Field) {
-                return generic.isAssignableFrom(((Field) found).getType());
-            } else {
-                return false;
-            }
+            return generic.isAssignableFrom(found.getType()) && converterClazz.isAssignableFrom(bound.getType());
         } else {
             return false;
         }
@@ -483,14 +425,14 @@ public class ConversionStore {
     }
 
     /**
-     * Найти подходящий текущему классу обработчик маппингов
+     * Найти подходящий текущему классу обработчик маппингов ответа
      *
      * @param forClass Класс для поиска обработчика
      * @param <T> тип обработчика
      * @return найденный обработчик или null
      */
-    public <T> ConversionMapper<T> findMapper(Class<? extends T> forClass) {
-        return (ConversionMapper<T>) ReflectionUtils.findOnClassMap(mappersMap, forClass);
+    public <T> ConversionResponseMapper<T> findResponseMapper(Class<? extends T> forClass) {
+        return (ConversionResponseMapper<T>) ReflectionUtils.findOnClassMap(responseMappersMap, forClass);
     }
 
     /**

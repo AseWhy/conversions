@@ -1,4 +1,4 @@
-package io.github.asewhy.conversions.config.entities;
+package io.github.asewhy.conversions.config.entities.book;
 
 import io.github.asewhy.conversions.config.support.ExampleTestBook;
 import lombok.AllArgsConstructor;
