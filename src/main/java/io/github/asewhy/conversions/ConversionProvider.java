@@ -114,11 +114,10 @@ public class ConversionProvider {
             if (mirror.has(jsonName)) {
                 var mirrorValue = mirror.get(jsonName);
                 var found = current.getComputedResult(from);
-                var foundClass = found.getClass();
 
                 if (
                     found instanceof ConversionMutator<?> &&
-                    foundClass != clazz && mirrorValue.isObject()
+                    found.getClass() != clazz && mirrorValue.isObject()
                 ) {
                     createMutator((ConversionMutator<?>) found, mirrorValue);
                 }
