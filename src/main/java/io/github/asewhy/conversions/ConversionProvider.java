@@ -278,8 +278,6 @@ public class ConversionProvider {
             if(resolver != null) {
                 mapping = resolver.resolveMapping(from, mapping);
                 applyMappingConversion = resolver.propagation(from, mapping);
-            } else {
-                applyMappingConversion = false;
             }
         }
 
