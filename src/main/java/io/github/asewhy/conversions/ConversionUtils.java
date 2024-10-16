@@ -45,12 +45,12 @@ public class ConversionUtils {
         for(var current: objects) {
             if(current instanceof Field && field == null) {
                 field = (Field) current;
-            } else if(current instanceof Method && setter == null) {
+            } else if(current instanceof Method) {
                 var method = (Method) current;
 
-                if(method.getName().startsWith("set")) {
+                if(method.getName().startsWith("set") && setter == null) {
                     setter = method;
-                } else if(method.getName().startsWith("get")) {
+                } else if(method.getName().startsWith("get") && getter == null) {
                     getter = method;
                 }
             }
